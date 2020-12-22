@@ -20,8 +20,11 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "targetCommon.h"
+#include "config.h"
 #include "Uart.h"
+#include "DataCollection.h"
 #include "stdio.h"
+#include "stdbool.h"
 
 
 /** @addtogroup STM32F1xx_HAL_Examples
@@ -44,6 +47,9 @@ UART_HandleTypeDef debugUartHandle;
 void SystemClock_Config(void);
 static void Error_Handler(void);
 static void setupDebugUart(UART_HandleTypeDef *huart, uint32_t buadRate);
+
+bool collectData();
+bool collectDataUART();
 
 /* Private functions ---------------------------------------------------------*/
 
@@ -84,23 +90,57 @@ int main(void)
 
   // How to enable millis counter...
 
-  char *msg = "Hi from uart\r\n";
+  char *msg = "Starting\r\n";
 
   UART_putString(&debugUartHandle, msg); 
 
-  /* Output a message on Hyperterminal using printf function */
-  printf("\n\r UART Printf Example: retarget the C library printf function to the UART\n\r");
-  printf("** Test finished successfully. ** \n\r");
+  bool newData = false;
+  uint32_t lastDataCollectTime = 0U;
 
   /* Main Loop */
   while (1)
   {
     // Get new sensor Data
+    // Periodic task that runs every few milliseconds
+    if(lastDataCollectTime > HAL_GetTick() + DATA_COLLECTION_RATE) {
+      collectDataUART();
+      
+      //collectData();
+
+      //filterData()
+
+      newData = true;
+    }
 
     // Send sensor data if requested
 
+    // Validate data is within range
 
   }
+}
+
+/*
+ * PURPOSE
+ *      This function is used to be a substitute for using the real collect data function. This
+ *      function should be used with a program to send sensor data over UART. The UART being use
+ *      should be set up ahead of time and be a global UART
+ * PARAMETERS
+ *      None
+ * RETURNS
+ *      bool - whether data was collected without error
+ */
+bool collectDataUART() {
+    // Collect data from UART
+    uint32_t startTime = HAL_GetTick();
+    int status = HAL_UART_Receive(&debugUartHandle,&sensorDataBuffer,
+                                  sizeof(struct ShockSensorData),0xffff);
+
+    if((HAL_GetTick() - startTime) > DATA_COLLECTION_RATE) {
+      // Too much time passed so something is wrong
+      Error_Handler();
+    }
+
+    return (status != HAL_OK);
 }
 
 /**

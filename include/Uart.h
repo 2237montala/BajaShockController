@@ -8,6 +8,8 @@
 
 #include "targetCommon.h"
 
+#define ADD_CR        1
+#define UART_NEW_LINE "\r\n"
 
 int UART_Init(UART_HandleTypeDef *UartHandle);
 
