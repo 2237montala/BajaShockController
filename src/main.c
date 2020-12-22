@@ -131,14 +131,8 @@ int main(void)
  */
 bool collectDataUART() {
     // Collect data from UART
-    uint32_t startTime = HAL_GetTick();
     int status = HAL_UART_Receive(&debugUartHandle,&sensorDataBuffer,
                                   sizeof(struct ShockSensorData),0xffff);
-
-    if((HAL_GetTick() - startTime) > DATA_COLLECTION_RATE) {
-      // Too much time passed so something is wrong
-      Error_Handler();
-    }
 
     return (status != HAL_OK);
 }
