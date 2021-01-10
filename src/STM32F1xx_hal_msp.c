@@ -99,4 +99,68 @@ void HAL_UART_MspDeInit(UART_HandleTypeDef *huart)
 
 }
 
-/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
+/**
+  * @brief CAN MSP Initialization 
+  *        This function configures the hardware resources used in this example: 
+  *           - Peripheral's clock enable
+  *           - Peripheral's GPIO Configuration  
+  * @param hcan: CAN handle pointer
+  * @retval None
+  */
+void HAL_CAN_MspInit(CAN_HandleTypeDef* hcan)
+{
+  // Set up of this function was found here
+  // https://os.mbed.com/users/hudakz/code/CANnucleo//file/cebc6f21046e/stm32f1xx_hal_msp.c/
+  GPIO_InitTypeDef   GPIO_InitStruct;
+  
+  /*##-1- Enable peripherals and GPIO Clocks #################################*/
+  /* CAN1 Periph clock enable */
+  CANx_CLK_ENABLE();
+  /* Enable GPIO clock ****************************************/
+  CANx_GPIO_CLK_ENABLE();
+
+  // Need to enable the alternate function clock
+  __HAL_RCC_AFIO_CLK_ENABLE();
+  __HAL_AFIO_REMAP_CAN1_2();
+
+  /*##-2- Configure peripheral GPIO ##########################################*/ 
+  /* CAN1 TX GPIO pin configuration */
+  GPIO_InitStruct.Pin = CANx_TX_PIN;
+
+  // Need to set these pins as alternate function as they default
+  // to timer channels
+  GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  
+  HAL_GPIO_Init(CANx_TX_GPIO_PORT, &GPIO_InitStruct);
+  
+  /* CAN1 RX GPIO pin configuration */
+  GPIO_InitStruct.Pin = CANx_RX_PIN;
+  GPIO_InitStruct.Mode = GPIO_MODE_AF_INPUT;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  
+  HAL_GPIO_Init(CANx_RX_GPIO_PORT, &GPIO_InitStruct);
+}
+
+/**
+  * @brief CAN MSP De-Initialization 
+  *        This function frees the hardware resources used in this example:
+  *          - Disable the Peripheral's clock
+  *          - Revert GPIO configuration to their default state
+  * @param hcan: CAN handle pointer
+  * @retval None
+  */
+void HAL_CAN_MspDeInit(CAN_HandleTypeDef *hcan)
+{
+  /*##-1- Reset peripherals ##################################################*/
+  CANx_FORCE_RESET();
+  CANx_RELEASE_RESET();
+
+  /*##-2- Disable peripherals and GPIO Clocks ################################*/
+  /* De-initialize the CAN1 TX GPIO pin */
+  HAL_GPIO_DeInit(CANx_TX_GPIO_PORT, CANx_TX_PIN);
+  /* De-initialize the CAN1 RX GPIO pin */
+  HAL_GPIO_DeInit(CANx_RX_GPIO_PORT, CANx_RX_PIN);
+}

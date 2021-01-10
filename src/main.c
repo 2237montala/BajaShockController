@@ -41,12 +41,22 @@
 /* Private variables ---------------------------------------------------------*/
 /* UART handler declaration */
 UART_HandleTypeDef debugUartHandle;
-#define debugUartBaudRate 115200
+const uint32_t debugUartBaudRate = 115200;
+
+
+CAN_HandleTypeDef     CanHandle;
+CAN_TxHeaderTypeDef   TxHeader;
+CAN_RxHeaderTypeDef   RxHeader;
+uint8_t               TxData[8];
+uint8_t               RxData[8];
+uint32_t              TxMailbox;
+uint32_t              RxMailbox;
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void Error_Handler(void);
 static void setupDebugUart(UART_HandleTypeDef *huart, uint32_t buadRate);
+static HAL_StatusTypeDef CAN_Polling(void);
 
 bool collectData();
 bool collectDataUART();
@@ -94,29 +104,33 @@ int main(void)
 
   UART_putString(&debugUartHandle, msg); 
 
+  UART_putString(&debugUartHandle, "Temp\r\n");
+
   bool newData = false;
   uint32_t lastDataCollectTime = 0U;
 
+  CAN_Polling();
+
   /* Main Loop */
-  while (1)
-  {
-    // Get new sensor Data
-    // Periodic task that runs every few milliseconds
-    if(lastDataCollectTime > HAL_GetTick() + DATA_COLLECTION_RATE) {
-      collectDataUART();
+  // while (1)
+  // {
+  //   // Get new sensor Data
+  //   // Periodic task that runs every few milliseconds
+  //   if(lastDataCollectTime > HAL_GetTick() + DATA_COLLECTION_RATE) {
+  //     collectDataUART();
       
-      //collectData();
+  //     //collectData();
 
-      //filterData()
+  //     //filterData()
 
-      newData = true;
-    }
+  //     newData = true;
+  //   }
 
-    // Send sensor data if requested
+  //   // Send sensor data if requested
 
-    // Validate data is within range
+  //   // Validate data is within range
 
-  }
+  // }
 }
 
 /*
@@ -243,7 +257,106 @@ static void setupDebugUart(UART_HandleTypeDef *huart, uint32_t buadRate) {
   }
 }
 
-void SysTick_Handler(void)
+/**
+  * @brief  Configures the CAN, transmit and receive by polling
+  * @param  None
+  * @retval PASSED if the reception is well done, FAILED in other case
+  */
+HAL_StatusTypeDef CAN_Polling(void)
 {
-    HAL_IncTick();
+  CAN_FilterTypeDef  sFilterConfig;
+  
+  /*##-1- Configure the CAN peripheral #######################################*/
+  CanHandle.Instance = CANx;
+    
+  CanHandle.Init.TimeTriggeredMode = DISABLE;
+  CanHandle.Init.AutoBusOff = DISABLE;
+  CanHandle.Init.AutoWakeUp = DISABLE;
+  CanHandle.Init.AutoRetransmission = DISABLE;
+  CanHandle.Init.ReceiveFifoLocked = DISABLE;
+  CanHandle.Init.TransmitFifoPriority = DISABLE;
+  CanHandle.Init.Mode = CAN_MODE_NORMAL;
+  CanHandle.Init.SyncJumpWidth = CAN_SJW_1TQ;
+  CanHandle.Init.TimeSeg1 = CAN_BS1_13TQ;
+  CanHandle.Init.TimeSeg2 = CAN_BS2_6TQ;
+  CanHandle.Init.Prescaler = 4;
+
+  // Used this website to get config values
+  // http://www.bittiming.can-wiki.info/
+  // Used a APB2 clock of 32 MHz and a CAN baud rate of 500kbps
+  
+  if(HAL_CAN_Init(&CanHandle) != HAL_OK)
+  {
+    /* Initialization Error */
+    Error_Handler();
+  }
+
+  /*##-2- Configure the CAN Filter ###########################################*/
+  // sFilterConfig.FilterBank = 0;
+  // sFilterConfig.FilterMode = CAN_FILTERMODE_IDMASK;
+  // sFilterConfig.FilterScale = CAN_FILTERSCALE_32BIT;
+  // sFilterConfig.FilterIdHigh = 0x0000;
+  // sFilterConfig.FilterIdLow = 0x0000;
+  // sFilterConfig.FilterMaskIdHigh = 0x0000;
+  // sFilterConfig.FilterMaskIdLow = 0x0000;
+  // sFilterConfig.FilterFIFOAssignment = CAN_RX_FIFO0;
+  // sFilterConfig.FilterActivation = ENABLE;
+  // sFilterConfig.SlaveStartFilterBank = 14;
+  
+  // if(HAL_CAN_ConfigFilter(&CanHandle, &sFilterConfig) != HAL_OK)
+  // {
+  //   /* Filter configuration Error */
+  //   Error_Handler();
+  // }
+
+  /*##-3- Start the CAN peripheral ###########################################*/
+  if (HAL_CAN_Start(&CanHandle) != HAL_OK)
+  {
+    /* Start Error */
+    Error_Handler();
+  }
+
+  // Wait for main controller to send a request
+  UART_putString(&debugUartHandle,"Waiting for message\r\n");
+  while(HAL_CAN_GetRxFifoFillLevel(&CanHandle,CAN_RX_FIFO0) == 0);
+
+  if(HAL_CAN_GetRxMessage(&CanHandle, CAN_RX_FIFO0, &RxHeader, RxData) != HAL_OK)
+  {
+    /* Reception Error */
+    Error_Handler();
+  }
+
+  if((RxHeader.StdId != 0x11)                     ||
+     (RxHeader.RTR != CAN_RTR_DATA)               ||
+     (RxHeader.IDE != CAN_ID_STD)                 ||
+     (RxHeader.DLC != 2))
+  {
+    /* Rx message Error */
+    return HAL_ERROR;
+  }
+
+  UART_putString(&debugUartHandle,"Got CAN message\r\n");
+  UART_putString(&debugUartHandle,RxData);
+
+  // Send requested data
+  TxHeader.StdId = 0x11;
+  TxHeader.RTR = CAN_RTR_DATA;
+  TxHeader.IDE = CAN_ID_STD;
+  TxHeader.DLC = 2;
+  TxHeader.TransmitGlobalTime = DISABLE;
+  TxData[0] = 10U;
+  
+  /* Request transmission */
+  if(HAL_CAN_AddTxMessage(&CanHandle, &TxHeader, TxData, &TxMailbox) != HAL_OK)
+  {
+    /* Transmission request Error */
+    Error_Handler();
+  }
+  
+  /* Wait transmission complete */
+  while(HAL_CAN_GetTxMailboxesFreeLevel(&CanHandle) != 3) {}
+  
+
+  return HAL_OK; /* Test Passed */
 }
+

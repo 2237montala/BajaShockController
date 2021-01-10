@@ -40,7 +40,7 @@
   */
 
 /* Includes ------------------------------------------------------------------*/
-#include "stm32f1xx_nucleo.h"
+#include "STM32F1xx_nucleo.h"
 
 /** @addtogroup BSP
   * @{
