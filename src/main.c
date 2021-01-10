@@ -131,8 +131,13 @@ int main(void)
  */
 bool collectDataUART() {
     // Collect data from UART
-    int status = HAL_UART_Receive(&debugUartHandle,&sensorDataBuffer,
+    uint8_t dataBuff[sizeof(struct ShockSensorData)];
+
+    int status = HAL_UART_Receive(&debugUartHandle,&dataBuff,
                                   sizeof(struct ShockSensorData),0xffff);
+
+    // Copy the received data to the buffer
+    memcpy(&sensorDataBuffer,dataBuff,sizeof(struct ShockSensorData));
 
     return (status != HAL_OK);
 }

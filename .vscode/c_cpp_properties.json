@@ -1,10 +1,12 @@
+//
+// !!! WARNING !!! AUTO-GENERATED FILE!
+// PLEASE DO NOT MODIFY IT AND USE "platformio.ini":
+// https://docs.platformio.org/page/projectconf/section_env_build.html#build-flags
+//
 {
     "configurations": [
         {
-            "name": "!!! WARNING !!! AUTO-GENERATED FILE, PLEASE DO NOT MODIFY IT AND USE https://docs.platformio.org/page/projectconf/section_env_build.html#build-flags"
-        },
-        {
-            "name": "Win32",
+            "name": "PlatformIO",
             "includePath": [
                 "c:/Users/antho/Documents/School Work/Baja/BajaCode/BajaShockController/include",
                 "c:/Users/antho/Documents/School Work/Baja/BajaCode/BajaShockController/src",
@@ -111,13 +113,12 @@
                 ]
             },
             "defines": [
-                "PLATFORMIO=50003",
+                "PLATFORMIO=50004",
                 "STM32F103xB",
                 "USE_HAL_DRIVER",
                 "F_CPU=72000000L",
                 ""
             ],
-            "intelliSenseMode": "gcc-x64",
             "compilerPath": "C:/Users/antho/.platformio/packages/toolchain-gccarmnoneeabi/bin/arm-none-eabi-gcc.exe",
             "compilerArgs": [
                 "-mthumb",
