@@ -105,6 +105,7 @@ int main(void)
   UART_putString(&debugUartHandle, msg); 
 
   UART_putString(&debugUartHandle, "Temp\r\n");
+  printf("Hello from printf\r\n");
 
   bool newData = false;
   uint32_t lastDataCollectTime = 0U;
@@ -278,8 +279,11 @@ HAL_StatusTypeDef CAN_Polling(void)
   CanHandle.Init.Mode = CAN_MODE_NORMAL;
   CanHandle.Init.SyncJumpWidth = CAN_SJW_1TQ;
   CanHandle.Init.TimeSeg1 = CAN_BS1_13TQ;
-  CanHandle.Init.TimeSeg2 = CAN_BS2_6TQ;
-  CanHandle.Init.Prescaler = 4;
+  CanHandle.Init.TimeSeg2 = CAN_BS2_2TQ;
+  CanHandle.Init.Prescaler = 20;
+
+  // 500kbps use Sync of 1, Seg1 of 13, Seg2 of 2, and prescale of 4
+  // 100kbps use Sync of 1, Seg1 of 13, Seg2 of 2, and prescale of 20
 
   // Used this website to get config values
   // http://www.bittiming.can-wiki.info/
@@ -292,22 +296,22 @@ HAL_StatusTypeDef CAN_Polling(void)
   }
 
   /*##-2- Configure the CAN Filter ###########################################*/
-  // sFilterConfig.FilterBank = 0;
-  // sFilterConfig.FilterMode = CAN_FILTERMODE_IDMASK;
-  // sFilterConfig.FilterScale = CAN_FILTERSCALE_32BIT;
-  // sFilterConfig.FilterIdHigh = 0x0000;
-  // sFilterConfig.FilterIdLow = 0x0000;
-  // sFilterConfig.FilterMaskIdHigh = 0x0000;
-  // sFilterConfig.FilterMaskIdLow = 0x0000;
-  // sFilterConfig.FilterFIFOAssignment = CAN_RX_FIFO0;
-  // sFilterConfig.FilterActivation = ENABLE;
-  // sFilterConfig.SlaveStartFilterBank = 14;
+  sFilterConfig.FilterBank = 0;
+  sFilterConfig.FilterMode = CAN_FILTERMODE_IDMASK;
+  sFilterConfig.FilterScale = CAN_FILTERSCALE_32BIT;
+  sFilterConfig.FilterIdHigh = 0x0000;
+  sFilterConfig.FilterIdLow = 0x0000;
+  sFilterConfig.FilterMaskIdHigh = 0x0000;
+  sFilterConfig.FilterMaskIdLow = 0x0000;
+  sFilterConfig.FilterFIFOAssignment = CAN_RX_FIFO0;
+  sFilterConfig.FilterActivation = DISABLE;
+  sFilterConfig.SlaveStartFilterBank = 14;
   
-  // if(HAL_CAN_ConfigFilter(&CanHandle, &sFilterConfig) != HAL_OK)
-  // {
-  //   /* Filter configuration Error */
-  //   Error_Handler();
-  // }
+  if(HAL_CAN_ConfigFilter(&CanHandle, &sFilterConfig) != HAL_OK)
+  {
+    /* Filter configuration Error */
+    Error_Handler();
+  }
 
   /*##-3- Start the CAN peripheral ###########################################*/
   if (HAL_CAN_Start(&CanHandle) != HAL_OK)
@@ -318,7 +322,12 @@ HAL_StatusTypeDef CAN_Polling(void)
 
   // Wait for main controller to send a request
   UART_putString(&debugUartHandle,"Waiting for message\r\n");
-  while(HAL_CAN_GetRxFifoFillLevel(&CanHandle,CAN_RX_FIFO0) == 0);
+  while(HAL_CAN_GetRxFifoFillLevel(&CanHandle,CAN_RX_FIFO0) == 0) {
+    uint32_t recError = CanHandle.Instance->ESR & CAN_ESR_REC_Msk;
+    if(recError > 0) {
+      printf("%d\r\n",recError);
+    }
+  }
 
   if(HAL_CAN_GetRxMessage(&CanHandle, CAN_RX_FIFO0, &RxHeader, RxData) != HAL_OK)
   {
@@ -326,25 +335,24 @@ HAL_StatusTypeDef CAN_Polling(void)
     Error_Handler();
   }
 
-  if((RxHeader.StdId != 0x11)                     ||
+  if((RxHeader.StdId != 0x20)                     ||
      (RxHeader.RTR != CAN_RTR_DATA)               ||
-     (RxHeader.IDE != CAN_ID_STD)                 ||
-     (RxHeader.DLC != 2))
+     (RxHeader.IDE != CAN_ID_STD))
   {
     /* Rx message Error */
     return HAL_ERROR;
   }
 
   UART_putString(&debugUartHandle,"Got CAN message\r\n");
-  UART_putString(&debugUartHandle,RxData);
+  printf("%x%x",RxData[0],RxData[1]);
 
   // Send requested data
-  TxHeader.StdId = 0x11;
+  TxHeader.StdId = 0x12;
   TxHeader.RTR = CAN_RTR_DATA;
   TxHeader.IDE = CAN_ID_STD;
-  TxHeader.DLC = 2;
+  TxHeader.DLC = 1;
   TxHeader.TransmitGlobalTime = DISABLE;
-  TxData[0] = 10U;
+  TxData[0] = 0x57;
   
   /* Request transmission */
   if(HAL_CAN_AddTxMessage(&CanHandle, &TxHeader, TxData, &TxMailbox) != HAL_OK)
