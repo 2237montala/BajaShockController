@@ -273,7 +273,7 @@ HAL_StatusTypeDef CAN_Polling(void)
   CanHandle.Init.TimeTriggeredMode = DISABLE;
   CanHandle.Init.AutoBusOff = DISABLE;
   CanHandle.Init.AutoWakeUp = DISABLE;
-  CanHandle.Init.AutoRetransmission = DISABLE;
+  CanHandle.Init.AutoRetransmission = ENABLE;
   CanHandle.Init.ReceiveFifoLocked = DISABLE;
   CanHandle.Init.TransmitFifoPriority = DISABLE;
   CanHandle.Init.Mode = CAN_MODE_NORMAL;
@@ -352,7 +352,7 @@ HAL_StatusTypeDef CAN_Polling(void)
   TxHeader.IDE = CAN_ID_STD;
   TxHeader.DLC = 1;
   TxHeader.TransmitGlobalTime = DISABLE;
-  TxData[0] = 0x57;
+  TxData[0] = 0xCA;
   
   /* Request transmission */
   if(HAL_CAN_AddTxMessage(&CanHandle, &TxHeader, TxData, &TxMailbox) != HAL_OK)
