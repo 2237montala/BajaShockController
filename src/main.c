@@ -304,7 +304,7 @@ HAL_StatusTypeDef CAN_Polling(void)
   sFilterConfig.FilterMaskIdHigh = 0x0000;
   sFilterConfig.FilterMaskIdLow = 0x0000;
   sFilterConfig.FilterFIFOAssignment = CAN_RX_FIFO0;
-  sFilterConfig.FilterActivation = DISABLE;
+  sFilterConfig.FilterActivation = ENABLE;
   sFilterConfig.SlaveStartFilterBank = 14;
   
   if(HAL_CAN_ConfigFilter(&CanHandle, &sFilterConfig) != HAL_OK)
@@ -344,7 +344,7 @@ HAL_StatusTypeDef CAN_Polling(void)
   }
 
   UART_putString(&debugUartHandle,"Got CAN message\r\n");
-  printf("%x%x",RxData[0],RxData[1]);
+  printf("%x%x\r\n",RxData[0],RxData[1]);
 
   // Send requested data
   TxHeader.StdId = 0x12;
