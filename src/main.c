@@ -280,7 +280,7 @@ HAL_StatusTypeDef CAN_Polling(void)
   CanHandle.Init.SyncJumpWidth = CAN_SJW_1TQ;
   CanHandle.Init.TimeSeg1 = CAN_BS1_13TQ;
   CanHandle.Init.TimeSeg2 = CAN_BS2_2TQ;
-  CanHandle.Init.Prescaler = 20;
+  CanHandle.Init.Prescaler = 4;
 
   // 500kbps use Sync of 1, Seg1 of 13, Seg2 of 2, and prescale of 4
   // 100kbps use Sync of 1, Seg1 of 13, Seg2 of 2, and prescale of 20
