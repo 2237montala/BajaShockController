@@ -19,6 +19,7 @@
   */
 
 /* Includes ------------------------------------------------------------------*/
+#include "targetSpecific.h"
 #include "targetCommon.h"
 #include "config.h"
 #include "Uart.h"

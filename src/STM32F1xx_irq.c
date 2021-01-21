@@ -21,6 +21,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "targetCommon.h"
+#include "targetSpecific.h"
 #include "STM32F1xx_irq.h"
 
 /* Private typedef -----------------------------------------------------------*/

@@ -18,6 +18,8 @@
   */
 
 /* Includes ------------------------------------------------------------------*/
+#include "bsp.h"
+#include "targetSpecific.h"
 #include "targetCommon.h"
 
 /** @addtogroup STM32F1xx_HAL_Examples
