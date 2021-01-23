@@ -1,11 +1,12 @@
 #include "Uart.h"
 #include "string.h"
+#include "targetSpecific.h"
 
 int UART_Init(UART_HandleTypeDef *UartHandle) {
     return HAL_UART_Init(UartHandle);
 }
 
-int UART_putData(UART_HandleTypeDef *huart,uint8_t ptr, int len) {
+int UART_putData(UART_HandleTypeDef *huart,uint8_t* ptr, int len) {
     return HAL_UART_Transmit(huart, ptr, len, 0xFFFF); 
 }
 
