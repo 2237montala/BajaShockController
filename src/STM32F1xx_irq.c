@@ -29,7 +29,7 @@
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
 /* CAN handler declared in "main.c" file */
-extern CAN_HandleTypeDef CanHandle;
+//extern CAN_HandleTypeDef CanHandle;
 
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
@@ -143,7 +143,7 @@ void SysTick_Handler(void)
 */
 void CAN1_RX0_IRQHandler(void)
 {
-  HAL_CAN_IRQHandler(&CanHandle);
+  //HAL_CAN_IRQHandler(&CanHandle);
 }
 
 /**
@@ -153,7 +153,7 @@ void CAN1_RX0_IRQHandler(void)
 */
 void CAN1_RX1_IRQHandler(void)
 {
-  HAL_CAN_IRQHandler(&CanHandle);
+  //HAL_CAN_IRQHandler(&CanHandle);
 }
 
 /**
@@ -163,6 +163,6 @@ void CAN1_RX1_IRQHandler(void)
 */
 void CAN1_TX_IRQHandler(void)
 {
-  HAL_CAN_IRQHandler(&CanHandle);
+  //HAL_CAN_IRQHandler(&CanHandle);
 }
 

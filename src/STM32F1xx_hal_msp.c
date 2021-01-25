@@ -166,3 +166,23 @@ void HAL_CAN_MspDeInit(CAN_HandleTypeDef *hcan)
   /* De-initialize the CAN1 RX GPIO pin */
   HAL_GPIO_DeInit(CANx_RX_GPIO_PORT, CANx_RX_PIN);
 }
+
+void HAL_TIM_Base_MspInit(TIM_HandleTypeDef *htim) {
+  if(htim->Instance == TIM4) {
+    // Enable the clock that TIM4 is connected to. This might not be needed
+  __HAL_RCC_GPIOA_CLK_ENABLE();
+
+    // Enable clock for the timer itself
+    __HAL_RCC_TIM4_CLK_ENABLE();
+  }
+  
+}
+
+void HAL_TIM_BASE_MspInit(TIM_HandleTypeDef *htim) {
+  if(htim->Instance == TIM4) {
+    __HAL_RCC_TIM4_CLK_ENABLE();
+    __HAL_RCC_TIM4_RELEASE_RESET();
+    HAL_NVIC_DisableIRQ(TIM4_IRQn);
+  }
+
+}

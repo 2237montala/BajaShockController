@@ -35,9 +35,6 @@ static CAN_TxHeaderTypeDef TxHeader;
 // Header for RX CAN message. This header gets set when reading the oldest message in the fifo
 static CAN_RxHeaderTypeDef RxHeader;
 
-// This variable must be used AFTER calling CO_CANmodule_init
-static CAN_HandleTypeDef *CanHandle;
-
 
 static inline void prepareTxHeader(CAN_TxHeaderTypeDef *TxHeader, CO_CANtx_t *buffer) {
 	/* Map buffer data to the HAL CAN tx header data*/
@@ -59,7 +56,7 @@ void CO_CANsetConfigurationMode(void *CANptr){
 void CO_CANsetNormalMode(CO_CANmodule_t *CANmodule){
     /* Put CAN module in normal mode */
 
-    if(HAL_CAN_ActivateNotification(CanHandle,
+    if(HAL_CAN_ActivateNotification(CANmodule->CANptr,
 			CAN_IT_RX_FIFO0_MSG_PENDING |
 			CAN_IT_RX_FIFO1_MSG_PENDING |
 			CAN_IT_TX_MAILBOX_EMPTY)
@@ -116,13 +113,12 @@ CO_ReturnError_t CO_CANmodule_init(
         txArray[i].bufferFull = false;
     }
 
+    // Convert the void pointer for the CAN module to the HAL struct
+    CAN_HandleTypeDef *CanHandle = CANmodule->CANptr;
 
     /* Configure CAN module registers */
     // Configuration is done with HAL
     CO_CANmodule_disable(CANmodule);
-
-	// Set the HAL CAN variable to memory address we specified
-	CanHandle = CANmodule->CANptr;
 
 	HAL_CAN_MspDeInit(CanHandle);
 	HAL_CAN_MspInit(CanHandle); /* NVIC and GPIO */
@@ -176,11 +172,14 @@ CO_ReturnError_t CO_CANmodule_init(
 void CO_CANmodule_disable(CO_CANmodule_t *CANmodule){
     /* turn off the module */
 	/* handled by HAL*/
-	HAL_CAN_DeactivateNotification(CanHandle,
+    if(CANmodule->CANptr != NULL) {
+        HAL_CAN_DeactivateNotification(CANmodule->CANptr,
 			CAN_IT_RX_FIFO0_MSG_PENDING |
 			CAN_IT_RX_FIFO1_MSG_PENDING |
 			CAN_IT_TX_MAILBOX_EMPTY);
-	HAL_CAN_Stop(CanHandle);
+	    HAL_CAN_Stop(CANmodule->CANptr);
+    }
+	
 }
 
 
@@ -228,7 +227,7 @@ CO_ReturnError_t CO_CANrxBufferInit(
             FilterConfig.FilterActivation = ENABLE;
             FilterConfig.SlaveStartFilterBank = 14;
             
-            if(HAL_CAN_ConfigFilter(CanHandle, &FilterConfig) != HAL_OK)
+            if(HAL_CAN_ConfigFilter(CANmodule->CANptr, &FilterConfig) != HAL_OK)
             {
                 /* Filter configuration Error */
                 return CO_ERROR_TIMEOUT;
@@ -288,7 +287,7 @@ CO_ReturnError_t CO_CANsend(CO_CANmodule_t *CANmodule, CO_CANtx_t *buffer){
     CO_LOCK_CAN_SEND();
     /* if CAN TX buffer is free, copy message to it */
     if(1 && CANmodule->CANtxCount == 0 && 
-      (HAL_CAN_GetTxMailboxesFreeLevel(CanHandle) > 0 )){
+      (HAL_CAN_GetTxMailboxesFreeLevel(CANmodule->CANptr) > 0 )){
         CANmodule->bufferInhibitFlag = buffer->syncFlag;
 
         // Temp variable to hold which mail box the transmitted message was put into
@@ -298,7 +297,7 @@ CO_ReturnError_t CO_CANsend(CO_CANmodule_t *CANmodule, CO_CANtx_t *buffer){
         prepareTxHeader(&TxHeader, buffer);
 
         /* copy message and txRequest */
-        if(HAL_CAN_AddTxMessage(CanHandle,&TxHeader,&buffer->data[0],&TxMailboxNum)	!= HAL_OK)
+        if(HAL_CAN_AddTxMessage(CANmodule->CANptr,&TxHeader,&buffer->data[0],&TxMailboxNum)	!= HAL_OK)
 		{
 			err = CO_ERROR_TIMEOUT;
 		}
@@ -433,7 +432,7 @@ void CO_CANinterrupt(CO_CANmodule_t *CANmodule){
         rcvMsg = 0; 
         /* get message from module here */
 
-        HAL_CAN_GetRxMessage(CanHandle, CAN_RX_FIFO0, &RxHeader, rcvMsg->data);
+        HAL_CAN_GetRxMessage(CANmodule->CANptr, CAN_RX_FIFO0, &RxHeader, rcvMsg->data);
 
         // Extract data from HAL RxHeader to CANOpen variables
         rcvMsg->DLC = RxHeader.DLC;
@@ -502,7 +501,7 @@ void CO_CANinterrupt(CO_CANmodule_t *CANmodule){
                     uint32_t TxMailboxNum;
 
 					prepareTxHeader(&TxHeader, buffer);
-					if(HAL_CAN_AddTxMessage(CanHandle,
+					if(HAL_CAN_AddTxMessage(CANmodule->CANptr,
 							&TxHeader,
 							&buffer->data[0],
 							&TxMailboxNum) != HAL_OK){
