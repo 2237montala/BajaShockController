@@ -178,7 +178,7 @@ void HAL_TIM_Base_MspInit(TIM_HandleTypeDef *htim) {
   
 }
 
-void HAL_TIM_BASE_MspInit(TIM_HandleTypeDef *htim) {
+void HAL_TIM_Base_MspDeInit(TIM_HandleTypeDef *htim) {
   if(htim->Instance == TIM4) {
     __HAL_RCC_TIM4_CLK_ENABLE();
     __HAL_RCC_TIM4_RELEASE_RESET();
