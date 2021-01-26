@@ -132,11 +132,11 @@ int main (void){
             log_printf("Error: CAN initialization failed: %d\r\n", err);
             return 0;
         }
-        err = CO_LSSinit(&pendingNodeId, &pendingBitRate);
-        if(err != CO_ERROR_NO) {
-            log_printf("Error: LSS slave initialization failed: %d\r\n", err);
-            return 0;
-        }
+        // err = CO_LSSinit(&pendingNodeId, &pendingBitRate);
+        // if(err != CO_ERROR_NO) {
+        //     log_printf("Error: LSS slave initialization failed: %d\r\n", err);
+        //     return 0;
+        // }
         activeNodeId = pendingNodeId;
         err = CO_CANopenInit(activeNodeId);
         if(err != CO_ERROR_NO && err != CO_ERROR_NODE_ID_UNCONFIGURED_LSS) {
@@ -188,7 +188,6 @@ int main (void){
 
         }
 
-
         /* start CAN */
         CO_CANsetNormalMode(CO->CANmodule[0]);
 
@@ -224,7 +223,7 @@ int main (void){
 
 
     /* delete objects from memory */
-    CO_delete((void*) 0/* CAN module address */);
+    CO_delete((void*) &CanHandle);
 
     log_printf("CANopenNode finished\r\n");
 

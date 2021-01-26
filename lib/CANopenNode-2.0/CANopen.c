@@ -65,8 +65,6 @@ static uint32_t             CO_traceBufferSize[CO_NO_TRACE];
     || CO_NO_SRDO                                 > 64     \
     || (CO_NO_RPDO < 1 || CO_NO_RPDO > 0x200)              \
     || (CO_NO_TPDO < 1 || CO_NO_TPDO > 0x200)              \
-    || ODL_consumerHeartbeatTime_arrayLength      == 0     \
-    || ODL_errorStatusBits_stringLength           < 10     \
     || CO_NO_LSS_SLAVE                            >  1     \
     || CO_NO_LSS_MASTER                           >  1
 #error Features from CO_OD.h file are not corectly configured for this project!
@@ -869,15 +867,15 @@ CO_ReturnError_t CO_CANopenInit(uint8_t nodeId) {
         if (err) return err;
     }
 
-    /* Heartbeat consumer */
-    err = CO_HBconsumer_init(CO->HBcons,
-                             CO->em,
-                             CO->SDO[0],
-                             &OD_consumerHeartbeatTime[0],
-                             CO_HBcons_monitoredNodes,
-                             CO_NO_HB_CONS,
-                             CO->CANmodule[0],
-                             CO_RXCAN_CONS_HB);
+    // /* Heartbeat consumer */
+    // err = CO_HBconsumer_init(CO->HBcons,
+    //                          CO->em,
+    //                          CO->SDO[0],
+    //                          &OD_consumerHeartbeatTime[0],
+    //                          CO_HBcons_monitoredNodes,
+    //                          CO_NO_HB_CONS,
+    //                          CO->CANmodule[0],
+    //                          CO_RXCAN_CONS_HB);
 
     if (err) return err;
 
