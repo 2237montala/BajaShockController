@@ -220,8 +220,7 @@ CO_NMT_reset_cmd_t CO_NMT_process(
      * - HB producer and NMT->operatingState changed, but not from initialised */
     if ((NMT->operatingState == CO_NMT_INITIALIZING) ||
         (HBtime != 0 && (NMT->HBproducerTimer >= HBtime ||
-                         NMT->operatingState != NMT->operatingStatePrev)
-    )) {
+                         NMT->operatingState != NMT->operatingStatePrev))) {
         /* Start from the beginning. If OS is slow, time sliding may occur. However,
          * heartbeat is not for synchronization, it is for health report. */
         NMT->HBproducerTimer = 0;

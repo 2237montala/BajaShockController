@@ -22,14 +22,11 @@
 #include "targetSpecific.h"
 #include "targetCommon.h"
 
-/** @addtogroup STM32F1xx_HAL_Examples
-  * @{
-  */
-
-/** @defgroup HAL_MSP
-  * @brief HAL MSP module.
-  * @{
-  */
+// Interrupt priorities
+#define TIM4_IRQ_PRIORITY 0xF
+#define CAN1_TX_IRQ_PRIORITY 0xA
+#define CAN1_RX0_IRQ_PRIORITY 0xA
+#define CAN1_RX1_IRQ_PRIORITY 0xA
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
@@ -144,6 +141,14 @@ void HAL_CAN_MspInit(CAN_HandleTypeDef* hcan)
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   
   HAL_GPIO_Init(CANx_RX_GPIO_PORT, &GPIO_InitStruct);
+
+  /* CAN1 interrupt Init */
+  HAL_NVIC_SetPriority(CAN1_TX_IRQn, CAN1_TX_IRQ_PRIORITY, 0);
+  HAL_NVIC_EnableIRQ(CAN1_TX_IRQn);
+  HAL_NVIC_SetPriority(CAN1_RX0_IRQn, CAN1_RX0_IRQ_PRIORITY, 0);
+  HAL_NVIC_EnableIRQ(CAN1_RX0_IRQn);
+  HAL_NVIC_SetPriority(CAN1_RX1_IRQn, CAN1_RX1_IRQ_PRIORITY, 0);
+  HAL_NVIC_EnableIRQ(CAN1_RX1_IRQn);
 }
 
 /**
@@ -165,15 +170,23 @@ void HAL_CAN_MspDeInit(CAN_HandleTypeDef *hcan)
   HAL_GPIO_DeInit(CANx_TX_GPIO_PORT, CANx_TX_PIN);
   /* De-initialize the CAN1 RX GPIO pin */
   HAL_GPIO_DeInit(CANx_RX_GPIO_PORT, CANx_RX_PIN);
+
+  HAL_NVIC_DisableIRQ(CAN1_TX_IRQn);
+  HAL_NVIC_DisableIRQ(CAN1_RX0_IRQn);
+  HAL_NVIC_DisableIRQ(CAN1_RX1_IRQn);
 }
 
 void HAL_TIM_Base_MspInit(TIM_HandleTypeDef *htim) {
   if(htim->Instance == TIM4) {
     // Enable the clock that TIM4 is connected to. This might not be needed
-  __HAL_RCC_GPIOA_CLK_ENABLE();
+    __HAL_RCC_GPIOA_CLK_ENABLE();
 
     // Enable clock for the timer itself
     __HAL_RCC_TIM4_CLK_ENABLE();
+
+    // Set up interrupts for the timer
+    HAL_NVIC_SetPriority(TIM4_IRQn,TIM4_IRQ_PRIORITY,0);
+    HAL_NVIC_EnableIRQ(TIM4_IRQn);
   }
   
 }

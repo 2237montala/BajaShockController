@@ -35,7 +35,14 @@ static CAN_TxHeaderTypeDef TxHeader;
 // Header for RX CAN message. This header gets set when reading the oldest message in the fifo
 static CAN_RxHeaderTypeDef RxHeader;
 
+// This variable must be used AFTER calling CO_CANmodule_init
+static CAN_HandleTypeDef *CanHandle;
 
+// Private function declarations
+static inline void prepareTxHeader(CAN_TxHeaderTypeDef *TxHeader, CO_CANtx_t *buffer);
+void CO_CANInterruptRx(CO_CANmodule_t *CANmodule);
+
+// Custom functions for STM32 implementation of CANOpen
 static inline void prepareTxHeader(CAN_TxHeaderTypeDef *TxHeader, CO_CANtx_t *buffer) {
 	/* Map buffer data to the HAL CAN tx header data*/
 	TxHeader->ExtId = 0u;
@@ -43,6 +50,14 @@ static inline void prepareTxHeader(CAN_TxHeaderTypeDef *TxHeader, CO_CANtx_t *bu
 	TxHeader->DLC = buffer->DLC;
 	TxHeader->StdId = ( buffer->ident >> 2 );
 	TxHeader->RTR = ( buffer->ident & 0x2 );
+}
+
+void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan) {
+    CO_CANInterruptRx(hcan);
+}
+
+void HAL_CAN_RxFifo1MsgPendingCallback(CAN_HandleTypeDef *hcan) {
+    CO_CANInterruptRx(hcan);
 }
 
 
@@ -55,25 +70,27 @@ void CO_CANsetConfigurationMode(void *CANptr){
 /******************************************************************************/
 void CO_CANsetNormalMode(CO_CANmodule_t *CANmodule){
     /* Put CAN module in normal mode */
+    if(CANmodule->CANptr == CAN1) {
+        if(HAL_CAN_Start(CANmodule->CANptr) != HAL_OK) {
+            if(HAL_CAN_ActivateNotification(CanHandle,
+                CAN_IT_RX_FIFO0_MSG_PENDING | CAN_IT_RX_FIFO1_MSG_PENDING | CAN_IT_TX_MAILBOX_EMPTY)
+                != HAL_OK) {
+                /* Notification Error */
+                CANmodule->errinfo = CO_ERROR_TIMEOUT;
+            }
+        } else {
+            CANmodule->errinfo = CO_ERROR_TIMEOUT;
+        }
 
-    if(HAL_CAN_ActivateNotification(CANmodule->CANptr,
-			CAN_IT_RX_FIFO0_MSG_PENDING |
-			CAN_IT_RX_FIFO1_MSG_PENDING |
-			CAN_IT_TX_MAILBOX_EMPTY)
-			!= HAL_OK)
-	{
-		/* Notification Error */
-        CANmodule->errinfo = CO_ERROR_TIMEOUT;
-	}
-
-	CANmodule->CANnormal = true;
+        CANmodule->CANnormal = true;
+    }
+    CANmodule->errinfo = CO_ERROR_NO;
 }
 
 
 /******************************************************************************/
 CO_ReturnError_t CO_CANmodule_init(
         CO_CANmodule_t         *CANmodule,
-        //CAN_HandleTypeDef      *HALCanObject,
         void *CANptr,
 		CO_CANrx_t              rxArray[],
         uint16_t                rxSize,
@@ -97,7 +114,8 @@ CO_ReturnError_t CO_CANmodule_init(
     CANmodule->txSize = txSize;
     CANmodule->CANerrorStatus = 0;
     CANmodule->CANnormal = false;
-    CANmodule->useCANrxFilters = (rxSize <= 32U) ? true : false;/* microcontroller dependent */
+    //CANmodule->useCANrxFilters = (rxSize <= 32U) ? true : false;/* microcontroller dependent */
+    CANmodule->useCANrxFilters = false;
     CANmodule->bufferInhibitFlag = false;
     CANmodule->firstCANtxMessage = true;
     CANmodule->CANtxCount = 0U;
@@ -113,12 +131,12 @@ CO_ReturnError_t CO_CANmodule_init(
         txArray[i].bufferFull = false;
     }
 
-    // Convert the void pointer for the CAN module to the HAL struct
-    CAN_HandleTypeDef *CanHandle = CANmodule->CANptr;
-
     /* Configure CAN module registers */
     // Configuration is done with HAL
     CO_CANmodule_disable(CANmodule);
+
+	// Set the HAL CAN variable to memory address we specified
+	CanHandle = CANmodule->CANptr;
 
 	HAL_CAN_MspDeInit(CanHandle);
 	HAL_CAN_MspInit(CanHandle); /* NVIC and GPIO */
@@ -172,12 +190,10 @@ CO_ReturnError_t CO_CANmodule_init(
 void CO_CANmodule_disable(CO_CANmodule_t *CANmodule){
     /* turn off the module */
 	/* handled by HAL*/
-    if(CANmodule->CANptr != NULL) {
-        HAL_CAN_DeactivateNotification(CANmodule->CANptr,
-			CAN_IT_RX_FIFO0_MSG_PENDING |
-			CAN_IT_RX_FIFO1_MSG_PENDING |
-			CAN_IT_TX_MAILBOX_EMPTY);
-	    HAL_CAN_Stop(CANmodule->CANptr);
+    if(CANmodule->CANptr == CAN1) {
+        HAL_CAN_DeactivateNotification(CanHandle,
+			CAN_IT_RX_FIFO0_MSG_PENDING | CAN_IT_RX_FIFO1_MSG_PENDING | CAN_IT_TX_MAILBOX_EMPTY);
+	    HAL_CAN_Stop(CanHandle);
     }
 	
 }
@@ -213,6 +229,7 @@ CO_ReturnError_t CO_CANrxBufferInit(
         /* Set CAN hardware module filter and mask. */
         if(CANmodule->useCANrxFilters){
             // TODO: Add hardware filters
+            
         } else {
             // No hardware filters are used
             CAN_FilterTypeDef  FilterConfig;
@@ -227,7 +244,7 @@ CO_ReturnError_t CO_CANrxBufferInit(
             FilterConfig.FilterActivation = ENABLE;
             FilterConfig.SlaveStartFilterBank = 14;
             
-            if(HAL_CAN_ConfigFilter(CANmodule->CANptr, &FilterConfig) != HAL_OK)
+            if(HAL_CAN_ConfigFilter(CanHandle, &FilterConfig) != HAL_OK)
             {
                 /* Filter configuration Error */
                 return CO_ERROR_TIMEOUT;
@@ -287,7 +304,7 @@ CO_ReturnError_t CO_CANsend(CO_CANmodule_t *CANmodule, CO_CANtx_t *buffer){
     CO_LOCK_CAN_SEND();
     /* if CAN TX buffer is free, copy message to it */
     if(1 && CANmodule->CANtxCount == 0 && 
-      (HAL_CAN_GetTxMailboxesFreeLevel(CANmodule->CANptr) > 0 )){
+      (HAL_CAN_GetTxMailboxesFreeLevel(CanHandle) > 0 )){
         CANmodule->bufferInhibitFlag = buffer->syncFlag;
 
         // Temp variable to hold which mail box the transmitted message was put into
@@ -297,7 +314,7 @@ CO_ReturnError_t CO_CANsend(CO_CANmodule_t *CANmodule, CO_CANtx_t *buffer){
         prepareTxHeader(&TxHeader, buffer);
 
         /* copy message and txRequest */
-        if(HAL_CAN_AddTxMessage(CANmodule->CANptr,&TxHeader,&buffer->data[0],&TxMailboxNum)	!= HAL_OK)
+        if(HAL_CAN_AddTxMessage(CanHandle,&TxHeader,&buffer->data[0],&TxMailboxNum)	!= HAL_OK)
 		{
 			err = CO_ERROR_TIMEOUT;
 		}
@@ -419,113 +436,104 @@ typedef struct {
     uint8_t data[8];
 } CO_CANrxMsg_t;
 
-void CO_CANinterrupt(CO_CANmodule_t *CANmodule){
+void CO_CANInterruptRx(CO_CANmodule_t *CANmodule) {
+    CO_CANrxMsg_t *rcvMsg;      /* pointer to received message in CAN module */
+    uint16_t index;             /* index of received message */
+    uint32_t rcvMsgIdent;       /* identifier of the received message */
+    CO_CANrx_t *buffer = NULL;  /* receive message buffer from CO_CANmodule_t object. */
+    bool_t msgMatched = false;
 
-    /* receive interrupt */
-    if(1){
-        CO_CANrxMsg_t *rcvMsg;      /* pointer to received message in CAN module */
-        uint16_t index;             /* index of received message */
-        uint32_t rcvMsgIdent;       /* identifier of the received message */
-        CO_CANrx_t *buffer = NULL;  /* receive message buffer from CO_CANmodule_t object. */
-        bool_t msgMatched = false;
+    rcvMsg = 0; 
+    /* get message from module here */
 
-        rcvMsg = 0; 
-        /* get message from module here */
+    HAL_CAN_GetRxMessage(CanHandle, CAN_RX_FIFO0, &RxHeader, rcvMsg->data);
 
-        HAL_CAN_GetRxMessage(CANmodule->CANptr, CAN_RX_FIFO0, &RxHeader, rcvMsg->data);
+    // Extract data from HAL RxHeader to CANOpen variables
+    rcvMsg->DLC = RxHeader.DLC;
+    rcvMsg->ident = RxHeader.StdId;
 
-        // Extract data from HAL RxHeader to CANOpen variables
-        rcvMsg->DLC = RxHeader.DLC;
-        rcvMsg->ident = RxHeader.StdId;
-
-        rcvMsgIdent = rcvMsg->ident;
-        if(CANmodule->useCANrxFilters){
-            /* CAN module filters are used. Message with known 11-bit identifier has */
-            /* been received */
-            index = 0;  /* get index of the received message here. Or something similar */
-            if(index < CANmodule->rxSize){
-                buffer = &CANmodule->rxArray[index];
-                /* verify also RTR */
-                if(((rcvMsgIdent ^ buffer->ident) & buffer->mask) == 0U){
-                    msgMatched = true;
-                }
-            }
-        }
-        else{
-            /* CAN module filters are not used, message with any standard 11-bit identifier */
-            /* has been received. Search rxArray form CANmodule for the same CAN-ID. */
-            buffer = &CANmodule->rxArray[0];
-            for(index = CANmodule->rxSize; index > 0U; index--){
-                if(((rcvMsgIdent ^ buffer->ident) & buffer->mask) == 0U){
-                    msgMatched = true;
-                    break;
-                }
-                buffer++;
-            }
-        }
-
-        /* Call specific function, which will process the message */
-        if(msgMatched && (buffer != NULL) && (buffer->CANrx_callback != NULL)){
-            buffer->CANrx_callback(buffer->object, (void*) rcvMsg);
-        }
-
-        /* Clear interrupt flag */
-        // HAL clears the flag for us
-    }
-
-
-    /* transmit interrupt */
-    else if(0){
-        /* Clear interrupt flag */
-
-        /* First CAN message (bootup) was sent successfully */
-        CANmodule->firstCANtxMessage = false;
-        /* clear flag from previous message */
-        CANmodule->bufferInhibitFlag = false;
-        /* Are there any new messages waiting to be send */
-        if(CANmodule->CANtxCount > 0U){
-            uint16_t i;             /* index of transmitting message */
-
-            /* first buffer */
-            CO_CANtx_t *buffer = &CANmodule->txArray[0];
-            /* search through whole array of pointers to transmit message buffers. */
-            for(i = CANmodule->txSize; i > 0U; i--){
-                /* if message buffer is full, send it. */
-                if(buffer->bufferFull){
-                    buffer->bufferFull = false;
-                    CANmodule->CANtxCount--;
-
-                    /* Copy message to CAN buffer */
-                    CANmodule->bufferInhibitFlag = buffer->syncFlag;
-                    
-                    uint32_t TxMailboxNum;
-
-					prepareTxHeader(&TxHeader, buffer);
-					if(HAL_CAN_AddTxMessage(CANmodule->CANptr,
-							&TxHeader,
-							&buffer->data[0],
-							&TxMailboxNum) != HAL_OK){
-						;//do nothing
-					}
-					else
-					{
-						buffer->bufferFull = false;
-						CANmodule->CANtxCount--;
-					}
-
-
-                    break;                      /* exit for loop */
-                }
-                buffer++;
-            }/* end of for loop */
-
-            /* Clear counter if no more messages */
-            if(i == 0U){
-                CANmodule->CANtxCount = 0U;
+    rcvMsgIdent = rcvMsg->ident;
+    if(CANmodule->useCANrxFilters){
+        /* CAN module filters are used. Message with known 11-bit identifier has */
+        /* been received */
+        index = 0;  /* get index of the received message here. Or something similar */
+        if(index < CANmodule->rxSize){
+            buffer = &CANmodule->rxArray[index];
+            /* verify also RTR */
+            if(((rcvMsgIdent ^ buffer->ident) & buffer->mask) == 0U){
+                msgMatched = true;
             }
         }
     }
     else{
-        /* some other interrupt reason */
+        /* CAN module filters are not used, message with any standard 11-bit identifier */
+        /* has been received. Search rxArray form CANmodule for the same CAN-ID. */
+        buffer = &CANmodule->rxArray[0];
+        for(index = CANmodule->rxSize; index > 0U; index--){
+            if(((rcvMsgIdent ^ buffer->ident) & buffer->mask) == 0U){
+                msgMatched = true;
+                break;
+            }
+            buffer++;
+        }
+    }
+
+    /* Call specific function, which will process the message */
+    if(msgMatched && (buffer != NULL) && (buffer->CANrx_callback != NULL)){
+        buffer->CANrx_callback(buffer->object, (void*) rcvMsg);
+    }
+
+    /* Clear interrupt flag */
+    // HAL clears the flag for us
+}
+
+void CO_CANInterruptTx(CO_CANmodule_t *CANmodule){
+    /* Clear interrupt flag */
+
+    /* First CAN message (bootup) was sent successfully */
+    CANmodule->firstCANtxMessage = false;
+    /* clear flag from previous message */
+    CANmodule->bufferInhibitFlag = false;
+    /* Are there any new messages waiting to be send */
+    if(CANmodule->CANtxCount > 0U){
+        uint16_t i;             /* index of transmitting message */
+
+        /* first buffer */
+        CO_CANtx_t *buffer = &CANmodule->txArray[0];
+        /* search through whole array of pointers to transmit message buffers. */
+        for(i = CANmodule->txSize; i > 0U; i--){
+            /* if message buffer is full, send it. */
+            if(buffer->bufferFull){
+                buffer->bufferFull = false;
+                CANmodule->CANtxCount--;
+
+                /* Copy message to CAN buffer */
+                CANmodule->bufferInhibitFlag = buffer->syncFlag;
+                
+                uint32_t TxMailboxNum;
+
+                prepareTxHeader(&TxHeader, buffer);
+                if(HAL_CAN_AddTxMessage(CanHandle,
+                        &TxHeader,
+                        &buffer->data[0],
+                        &TxMailboxNum) != HAL_OK){
+                    ;//do nothing
+                }
+                else
+                {
+                    buffer->bufferFull = false;
+                    CANmodule->CANtxCount--;
+                }
+
+
+                break;                      /* exit for loop */
+            }
+            buffer++;
+        }/* end of for loop */
+
+        /* Clear counter if no more messages */
+        if(i == 0U){
+            CANmodule->CANtxCount = 0U;
+        }
     }
 }
