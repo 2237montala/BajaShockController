@@ -143,6 +143,13 @@ int main (void){
         return 0;
     }
 
+    // // Need to start CAN module after setting filters
+    // if (HAL_CAN_Start(&CanHandle) != HAL_OK)
+    // {
+    //   /* Start Error */
+    //   Error_Handler();
+    // }
+
     // Reset timer just inscase the registers were not reset
     HAL_TIM_Base_DeInit(&msTimer);
     HAL_TIM_Base_Stop_IT(&msTimer);
@@ -236,6 +243,28 @@ int main (void){
         }
 
 
+      // uint32_t TxMailbox;
+      // CAN_TxHeaderTypeDef TxHeader;
+      // uint8_t TxData[8] = {0};
+
+      // TxHeader.StdId = 0x12;
+      // TxHeader.RTR = CAN_RTR_DATA;
+      // TxHeader.IDE = CAN_ID_STD;
+      // TxHeader.DLC = 1;
+      // TxHeader.TransmitGlobalTime = DISABLE;
+      // TxData[0] = 0xCA;
+
+      // /* Request transmission */
+      // if(HAL_CAN_AddTxMessage(&CanHandle, &TxHeader, TxData, &TxMailbox) != HAL_OK)
+      // {
+      //   /* Transmission request Error */
+      //   Error_Handler();
+      // }
+
+      // /* Wait transmission complete */
+      // while(HAL_CAN_GetTxMailboxesFreeLevel(&CanHandle) != 3) {}
+
+
         /* Process EEPROM */
 
         /* optional sleep for short time */
@@ -284,7 +313,7 @@ void tmrTask_thread(void){
 
 /* CAN interrupt function executes on received CAN message ********************/
 void /* interrupt */ CO_CAN1InterruptHandler(void){
-
+  nmtChanged = true;
     /* clear interrupt flag */
 }
 

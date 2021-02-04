@@ -18,7 +18,7 @@
   */
 
 /* Includes ------------------------------------------------------------------*/
-#include <bsp.h>
+#include <Bsp.h>
 #include "targetSpecific.h"
 #include "targetCommon.h"
 
@@ -145,10 +145,10 @@ void HAL_CAN_MspInit(CAN_HandleTypeDef* hcan)
   /* CAN1 interrupt Init */
   HAL_NVIC_SetPriority(CAN1_TX_IRQn, CAN1_TX_IRQ_PRIORITY, 0);
   HAL_NVIC_EnableIRQ(CAN1_TX_IRQn);
-  HAL_NVIC_SetPriority(CAN1_RX0_IRQn, CAN1_RX0_IRQ_PRIORITY, 0);
+  HAL_NVIC_SetPriority(CAN1_RX0_IRQn, CAN1_RX0_IRQ_PRIORITY, 1);
   HAL_NVIC_EnableIRQ(CAN1_RX0_IRQn);
-  HAL_NVIC_SetPriority(CAN1_RX1_IRQn, CAN1_RX1_IRQ_PRIORITY, 0);
-  HAL_NVIC_EnableIRQ(CAN1_RX1_IRQn);
+  // HAL_NVIC_SetPriority(CAN1_RX1_IRQn, CAN1_RX1_IRQ_PRIORITY, 0);
+  // HAL_NVIC_EnableIRQ(CAN1_RX1_IRQn);
 }
 
 /**
@@ -173,7 +173,6 @@ void HAL_CAN_MspDeInit(CAN_HandleTypeDef *hcan)
 
   HAL_NVIC_DisableIRQ(CAN1_TX_IRQn);
   HAL_NVIC_DisableIRQ(CAN1_RX0_IRQn);
-  HAL_NVIC_DisableIRQ(CAN1_RX1_IRQn);
 }
 
 void HAL_TIM_Base_MspInit(TIM_HandleTypeDef *htim) {

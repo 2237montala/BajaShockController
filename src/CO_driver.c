@@ -79,8 +79,9 @@ void CO_CANsetConfigurationMode(void *CANptr){
 /******************************************************************************/
 void CO_CANsetNormalMode(CO_CANmodule_t *CANmodule){
     /* Put CAN module in normal mode */
-    if(CANmodule->CANptr == CAN1) {
-        if(HAL_CAN_Start(CANmodule->CANptr) != HAL_OK) {
+    
+    if(((CAN_HandleTypeDef *)(CANmodule->CANptr))->Instance == CAN1) {
+        if(HAL_CAN_Start(CANmodule->CANptr) == HAL_OK) {
             if(HAL_CAN_ActivateNotification(CanHandle,
                 CAN_IT_RX_FIFO0_MSG_PENDING | CAN_IT_RX_FIFO1_MSG_PENDING | CAN_IT_TX_MAILBOX_EMPTY)
                 != HAL_OK) {
@@ -192,6 +193,24 @@ CO_ReturnError_t CO_CANmodule_init(
         /* CAN module filters are not used, all messages with standard 11-bit */
         /* identifier will be received */
         /* Configure mask 0 so, that all messages with standard identifier are accepted */
+        // No hardware filters are used
+        CAN_FilterTypeDef  FilterConfig;
+        FilterConfig.FilterBank = 0;
+        FilterConfig.FilterMode = CAN_FILTERMODE_IDMASK;
+        FilterConfig.FilterScale = CAN_FILTERSCALE_32BIT;
+        FilterConfig.FilterIdHigh = 0x0000;
+        FilterConfig.FilterIdLow = 0x0000;
+        FilterConfig.FilterMaskIdHigh = 0x0000;
+        FilterConfig.FilterMaskIdLow = 0x0000;
+        FilterConfig.FilterFIFOAssignment = CAN_RX_FIFO0;
+        FilterConfig.FilterActivation = ENABLE;
+        FilterConfig.SlaveStartFilterBank = 14;
+        
+        if(HAL_CAN_ConfigFilter(CanHandle, &FilterConfig) != HAL_OK)
+        {
+            /* Filter configuration Error */
+            return CO_ERROR_TIMEOUT;
+        }
     }
     return CO_ERROR_NO;
 }
@@ -201,7 +220,7 @@ CO_ReturnError_t CO_CANmodule_init(
 void CO_CANmodule_disable(CO_CANmodule_t *CANmodule){
     /* turn off the module */
 	/* handled by HAL*/
-    if(CANmodule->CANptr == CAN1) {
+    if(((CAN_HandleTypeDef *)(CANmodule->CANptr))->Instance == CAN1){
         HAL_CAN_DeactivateNotification(CanHandle,
 			CAN_IT_RX_FIFO0_MSG_PENDING | CAN_IT_RX_FIFO1_MSG_PENDING | CAN_IT_TX_MAILBOX_EMPTY);
 	    HAL_CAN_Stop(CanHandle);
@@ -242,24 +261,24 @@ CO_ReturnError_t CO_CANrxBufferInit(
             // TODO: Add hardware filters
             
         } else {
-            // No hardware filters are used
-            CAN_FilterTypeDef  FilterConfig;
-            FilterConfig.FilterBank = 0;
-            FilterConfig.FilterMode = CAN_FILTERMODE_IDMASK;
-            FilterConfig.FilterScale = CAN_FILTERSCALE_32BIT;
-            FilterConfig.FilterIdHigh = 0x0000;
-            FilterConfig.FilterIdLow = 0x0000;
-            FilterConfig.FilterMaskIdHigh = 0x0000;
-            FilterConfig.FilterMaskIdLow = 0x0000;
-            FilterConfig.FilterFIFOAssignment = CAN_RX_FIFO0;
-            FilterConfig.FilterActivation = ENABLE;
-            FilterConfig.SlaveStartFilterBank = 14;
+            // // No hardware filters are used
+            // CAN_FilterTypeDef  FilterConfig;
+            // FilterConfig.FilterBank = 0;
+            // FilterConfig.FilterMode = CAN_FILTERMODE_IDMASK;
+            // FilterConfig.FilterScale = CAN_FILTERSCALE_32BIT;
+            // FilterConfig.FilterIdHigh = 0x0000;
+            // FilterConfig.FilterIdLow = 0x0000;
+            // FilterConfig.FilterMaskIdHigh = 0x0000;
+            // FilterConfig.FilterMaskIdLow = 0x0000;
+            // FilterConfig.FilterFIFOAssignment = CAN_RX_FIFO0;
+            // FilterConfig.FilterActivation = ENABLE;
+            // FilterConfig.SlaveStartFilterBank = 14;
             
-            if(HAL_CAN_ConfigFilter(CanHandle, &FilterConfig) != HAL_OK)
-            {
-                /* Filter configuration Error */
-                return CO_ERROR_TIMEOUT;
-            }
+            // if(HAL_CAN_ConfigFilter(CanHandle, &FilterConfig) != HAL_OK)
+            // {
+            //     /* Filter configuration Error */
+            //     return CO_ERROR_TIMEOUT;
+            // }
         }
     }
     else{
@@ -329,6 +348,10 @@ CO_ReturnError_t CO_CANsend(CO_CANmodule_t *CANmodule, CO_CANtx_t *buffer){
 		{
 			err = CO_ERROR_TIMEOUT;
 		}
+
+        // while(HAL_CAN_GetTxMailboxesFreeLevel(CanHandle) != 3) {
+
+        // }
     }
     /* if no buffer is free, message will be sent by interrupt */
     else{
@@ -448,22 +471,22 @@ typedef struct {
 } CO_CANrxMsg_t;
 
 void CO_CANInterruptRx(CO_CANmodule_t *CANmodule) {
-    CO_CANrxMsg_t *rcvMsg;      /* pointer to received message in CAN module */
+    CO_CANrxMsg_t rcvMsg;      /* pointer to received message in CAN module */
     uint16_t index;             /* index of received message */
     uint32_t rcvMsgIdent;       /* identifier of the received message */
     CO_CANrx_t *buffer = NULL;  /* receive message buffer from CO_CANmodule_t object. */
     bool_t msgMatched = false;
 
-    rcvMsg = 0; 
+    memset(&rcvMsg,0,sizeof(CO_CANrxMsg_t));
     /* get message from module here */
 
-    HAL_CAN_GetRxMessage(CanHandle, CAN_RX_FIFO0, &RxHeader, rcvMsg->data);
+    HAL_CAN_GetRxMessage(CanHandle, CAN_RX_FIFO0, &RxHeader, rcvMsg.data);
 
     // Extract data from HAL RxHeader to CANOpen variables
-    rcvMsg->DLC = RxHeader.DLC;
-    rcvMsg->ident = RxHeader.StdId;
+    rcvMsg.DLC = RxHeader.DLC;
+    rcvMsg.ident = RxHeader.StdId;
 
-    rcvMsgIdent = rcvMsg->ident;
+    rcvMsgIdent = rcvMsg.ident;
     if(CANmodule->useCANrxFilters){
         /* CAN module filters are used. Message with known 11-bit identifier has */
         /* been received */
@@ -491,7 +514,7 @@ void CO_CANInterruptRx(CO_CANmodule_t *CANmodule) {
 
     /* Call specific function, which will process the message */
     if(msgMatched && (buffer != NULL) && (buffer->CANrx_callback != NULL)){
-        buffer->CANrx_callback(buffer->object, (void*) rcvMsg);
+        buffer->CANrx_callback(buffer->object, (void*) &rcvMsg);
     }
 
     /* Clear interrupt flag */
