@@ -38,6 +38,9 @@ static CAN_RxHeaderTypeDef RxHeader;
 // This variable must be used AFTER calling CO_CANmodule_init
 static CAN_HandleTypeDef *CanHandle;
 
+// pointer to CO_CanModule used in CubeMX CAN Rx interrupt routine*/
+static CO_CANmodule_t* RxFifo_Callback_CanModule_p = NULL;
+
 // Private function declarations
 static inline void prepareTxHeader(CAN_TxHeaderTypeDef *TxHeader, CO_CANtx_t *buffer);
 void CO_CANInterruptRx(CO_CANmodule_t *CANmodule);
@@ -53,11 +56,17 @@ static inline void prepareTxHeader(CAN_TxHeaderTypeDef *TxHeader, CO_CANtx_t *bu
 }
 
 void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan) {
-    CO_CANInterruptRx(hcan);
+    if(RxFifo_Callback_CanModule_p != NULL)
+	{
+		CO_CANInterruptRx(RxFifo_Callback_CanModule_p);
+	}
 }
 
 void HAL_CAN_RxFifo1MsgPendingCallback(CAN_HandleTypeDef *hcan) {
-    CO_CANInterruptRx(hcan);
+    if(RxFifo_Callback_CanModule_p != NULL)
+	{
+		CO_CANInterruptRx(RxFifo_Callback_CanModule_p);
+	}
 }
 
 
@@ -105,9 +114,11 @@ CO_ReturnError_t CO_CANmodule_init(
         return CO_ERROR_ILLEGAL_ARGUMENT;
     }
 
+    // Save local pointer to the CO_CAN object so it can be used for interrupts
+    RxFifo_Callback_CanModule_p = CANmodule;
+
     /* Configure object variables */
 	CANmodule->CANptr = CANptr;
-    //CANmodule->CANbaseAddress = HALCanObject;
     CANmodule->rxArray = rxArray;
     CANmodule->rxSize = rxSize;
     CANmodule->txArray = txArray;
