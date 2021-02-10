@@ -36,7 +36,7 @@ static CAN_TxHeaderTypeDef TxHeader;
 static CAN_RxHeaderTypeDef RxHeader;
 
 // This variable must be used AFTER calling CO_CANmodule_init
-static CAN_HandleTypeDef *CanHandle;
+static CAN_HandleTypeDef *CanHandle = NULL;
 
 // pointer to CO_CanModule used in CubeMX CAN Rx interrupt routine*/
 static CO_CANmodule_t* RxFifo_Callback_CanModule_p = NULL;
@@ -87,7 +87,6 @@ void CO_CANsetConfigurationMode(void *CANptr){
 /******************************************************************************/
 void CO_CANsetNormalMode(CO_CANmodule_t *CANmodule){
     /* Put CAN module in normal mode */
-    
     if(((CAN_HandleTypeDef *)(CANmodule->CANptr))->Instance == CAN1) {
         if(HAL_CAN_Start(CANmodule->CANptr) == HAL_OK) {
             if(HAL_CAN_ActivateNotification(CanHandle,
@@ -101,8 +100,11 @@ void CO_CANsetNormalMode(CO_CANmodule_t *CANmodule){
         }
 
         CANmodule->CANnormal = true;
+        CANmodule->errinfo = CO_ERROR_NO;
+    } else {
+        CANmodule->errinfo = CO_ERROR_INVALID_STATE;
     }
-    CANmodule->errinfo = CO_ERROR_NO;
+    
 }
 
 
@@ -228,7 +230,7 @@ CO_ReturnError_t CO_CANmodule_init(
 void CO_CANmodule_disable(CO_CANmodule_t *CANmodule){
     /* turn off the module */
 	/* handled by HAL*/
-    if(((CAN_HandleTypeDef *)(CANmodule->CANptr))->Instance == CAN1){
+    if(((CAN_HandleTypeDef *)(CANmodule->CANptr))->Instance == CAN1) {
         HAL_CAN_DeactivateNotification(CanHandle,
 			CAN_IT_RX_FIFO0_MSG_PENDING | CAN_IT_RX_FIFO1_MSG_PENDING | CAN_IT_TX_MAILBOX_EMPTY);
 	    HAL_CAN_Stop(CanHandle);
@@ -258,35 +260,21 @@ CO_ReturnError_t CO_CANrxBufferInit(
         buffer->CANrx_callback = CANrx_callback;
 
         /* CAN identifier and CAN mask, bit aligned with CAN module. Different on different microcontrollers. */
-        buffer->ident = ident & 0x07FFU;
-        if(rtr){
-            buffer->ident |= 0x0800U;
-        }
-        buffer->mask = (mask & 0x07FFU) | 0x0800U;
+        // Implementation comes from STM32 MX Driver for CANOpen
+        buffer->ident = (ident & 0x07FF) << 2;
+		if (rtr)
+		{
+			buffer->ident |= 0x02;
+		}
+		buffer->mask = (mask & 0x07FF) << 2;
+		buffer->mask |= 0x02;
 
         /* Set CAN hardware module filter and mask. */
         if(CANmodule->useCANrxFilters){
             // TODO: Add hardware filters
             
         } else {
-            // // No hardware filters are used
-            // CAN_FilterTypeDef  FilterConfig;
-            // FilterConfig.FilterBank = 0;
-            // FilterConfig.FilterMode = CAN_FILTERMODE_IDMASK;
-            // FilterConfig.FilterScale = CAN_FILTERSCALE_32BIT;
-            // FilterConfig.FilterIdHigh = 0x0000;
-            // FilterConfig.FilterIdLow = 0x0000;
-            // FilterConfig.FilterMaskIdHigh = 0x0000;
-            // FilterConfig.FilterMaskIdLow = 0x0000;
-            // FilterConfig.FilterFIFOAssignment = CAN_RX_FIFO0;
-            // FilterConfig.FilterActivation = ENABLE;
-            // FilterConfig.SlaveStartFilterBank = 14;
-            
-            // if(HAL_CAN_ConfigFilter(CanHandle, &FilterConfig) != HAL_OK)
-            // {
-            //     /* Filter configuration Error */
-            //     return CO_ERROR_TIMEOUT;
-            // }
+
         }
     }
     else{
@@ -312,15 +300,15 @@ CO_CANtx_t *CO_CANtxBufferInit(
         /* get specific buffer */
         buffer = &CANmodule->txArray[index];
 
-        buffer->ident &= 0x07FFU;
-        buffer->ident = ident << 2;
-        if(rtr) {
-            buffer->ident |= 0x2;
-        }
+        /* CAN identifier, DLC and rtr, bit aligned with CAN module transmit buffer.*/
+        // Implementation comes from STM32 MX Driver for CANOpen
+		buffer->ident &= 0x7FF;
+		buffer->ident = ident << 2;
+		if (rtr) buffer->ident |= 0x02;
 
-        buffer->DLC = noOfBytes;
-        buffer->bufferFull = false;
-        buffer->syncFlag = syncFlag;
+		buffer->DLC = noOfBytes;
+		buffer->bufferFull = false;
+		buffer->syncFlag = syncFlag;
     }
 
     return buffer;
@@ -357,12 +345,6 @@ CO_ReturnError_t CO_CANsend(CO_CANmodule_t *CANmodule, CO_CANtx_t *buffer){
 		{
 			err = CO_ERROR_TIMEOUT;
 		}
-
-        // uint32_t numFree = 0;
-        // do
-        // {
-        //    numFree = HAL_CAN_GetTxMailboxesFreeLevel(CanHandle);
-        // } while(numFree != 3);
     }
     /* if no buffer is free, message will be sent by interrupt */
     else{
