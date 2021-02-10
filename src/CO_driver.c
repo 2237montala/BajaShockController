@@ -50,8 +50,16 @@ static inline void prepareTxHeader(CAN_TxHeaderTypeDef *TxHeader, CO_CANtx_t *bu
 	/* Map buffer data to the HAL CAN tx header data*/
 	TxHeader->ExtId = 0u;
 	TxHeader->IDE = 0;
+
+    // Number of bytes in the messages is the 12th and 13th bit of the identifer
+    //TxHeader->DLC = (buffer->ident >> 12U);
+
 	TxHeader->DLC = buffer->DLC;
 	TxHeader->StdId = ( buffer->ident >> 2 );
+
+    // Need to remove the bits 12 and 13 as those hold the number of bytes
+    // in the message
+    //TxHeader->StdId = (buffer->ident & 0x7FF);
 	TxHeader->RTR = ( buffer->ident & 0x2 );
 }
 
@@ -304,12 +312,13 @@ CO_CANtx_t *CO_CANtxBufferInit(
         /* get specific buffer */
         buffer = &CANmodule->txArray[index];
 
-        /* CAN identifier, DLC and rtr, bit aligned with CAN module transmit buffer.
-         * Microcontroller specific. */
-        buffer->ident = ((uint32_t)ident & 0x07FFU)
-                      | ((uint32_t)(((uint32_t)noOfBytes & 0xFU) << 12U))
-                      | ((uint32_t)(rtr ? 0x8000U : 0U));
+        buffer->ident &= 0x07FFU;
+        buffer->ident = ident << 2;
+        if(rtr) {
+            buffer->ident |= 0x2;
+        }
 
+        buffer->DLC = noOfBytes;
         buffer->bufferFull = false;
         buffer->syncFlag = syncFlag;
     }
@@ -349,9 +358,11 @@ CO_ReturnError_t CO_CANsend(CO_CANmodule_t *CANmodule, CO_CANtx_t *buffer){
 			err = CO_ERROR_TIMEOUT;
 		}
 
-        // while(HAL_CAN_GetTxMailboxesFreeLevel(CanHandle) != 3) {
-
-        // }
+        // uint32_t numFree = 0;
+        // do
+        // {
+        //    numFree = HAL_CAN_GetTxMailboxesFreeLevel(CanHandle);
+        // } while(numFree != 3);
     }
     /* if no buffer is free, message will be sent by interrupt */
     else{
