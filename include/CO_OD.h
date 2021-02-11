@@ -35,13 +35,28 @@
 
    typedef domain_t     DOMAIN;
 
+// #ifndef timeOfDay_t
+//     typedef union {
+//         unsigned long long ullValue;
+//         struct {
+//             unsigned long ms:28;
+//             unsigned reserved:4;
+//             unsigned days:16;
+//             unsigned reserved2:16;
+//         };
+//     }timeOfDay_t;
+// #endif
+
+//     typedef timeOfDay_t TIME_OF_DAY;
+//     typedef timeOfDay_t TIME_DIFFERENCE;
+
 
 /*******************************************************************************
    FILE INFO:
       FileName:     
       FileVersion:  1
-      CreationTime: 
-      CreationDate: 
+      CreationTime: 11:01PM
+      CreationDate: 01-25-2021
       CreatedBy:    Anthony Montalbano
 ******************************************************************************/
 
@@ -72,7 +87,6 @@
 #define CO_NO_TIME 0
 #define CO_NO_GFC 0
 #define CO_NO_SRDO 0
-
 /*******************************************************************************
    OBJECT DICTIONARY
 *******************************************************************************/
