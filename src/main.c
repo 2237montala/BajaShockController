@@ -54,6 +54,8 @@ CAN_HandleTypeDef     CanHandle;
 TIM_HandleTypeDef msTimer = {.Instance = TIM4};
 bool nmtChanged = false;
 
+volatile uint32_t ledBlinkRate = 1000;
+
 /* Local function definitons */
 int setup(void);
 void SystemClock_Config(void);
@@ -151,8 +153,9 @@ int main (void){
     // }
 
     // Reset timer just inscase the registers were not reset
-    HAL_TIM_Base_DeInit(&msTimer);
     HAL_TIM_Base_Stop_IT(&msTimer);
+    HAL_TIM_Base_DeInit(&msTimer);
+    
 
     //HAL_TIM_ConfigClockSource()
     /* Configure Timer interrupt function for execution every 1 millisecond */
@@ -204,6 +207,8 @@ int main (void){
     log_printf("CANopenNode - Running...\r\n");
     fflush(stdout);
 
+    uint32_t lastLedBlinkTime = HAL_GetTick();
+
     while(reset == CO_RESET_NOT){
 /* loop for normal program execution ******************************************/
         uint16_t timer1msCopy, timer1msDiff;
@@ -217,29 +222,9 @@ int main (void){
         reset = CO_process(CO, (uint32_t)timer1msDiff*1000, NULL);
 
         /* Nonblocking application code may go here. */
-        if(nmtChanged) {
-          printf("NMT changed to ");
-          switch (CO->NMT->operatingState)
-          {
-          case 0:
-            printf("CO_NMT_INIT");
-            break;
-          case 127:
-            printf("CO_NMT_PRE_OPERATIONAL");
-            break;
-          case 5:
-            printf("CO_NMT_OPERATIONAL");
-            break;
-          case 4:
-            printf("CO_NMT_STOPPED");
-            break;
-          
-          default:
-            printf("CO_NMT_UNKNOWN");
-            break;
-          }
-          printf("\r\n");
-          nmtChanged = false;
+        if(HAL_GetTick() - lastLedBlinkTime > ledBlinkRate) {
+          lastLedBlinkTime = HAL_GetTick();
+          BSP_LED_Toggle(LED2);
         }
 
 
@@ -318,7 +303,24 @@ void /* interrupt */ CO_CAN1InterruptHandler(void){
 }
 
 void NMT_Changed_Callback(CO_NMT_internalState_t state) {
-  nmtChanged = true;
+  switch (CO->NMT->operatingState)
+  {
+  case CO_NMT_INITIALIZING:
+    ledBlinkRate = 2000;
+    break;
+  case CO_NMT_STOPPED:
+    ledBlinkRate = 100;
+    break;
+  case CO_NMT_PRE_OPERATIONAL:
+    ledBlinkRate = 1000;
+    break;
+  case CO_NMT_OPERATIONAL:
+    ledBlinkRate = 500;
+    break;
+  default:
+    ledBlinkRate = 100;
+    break;
+  }
 }
 
 // Micro controller specific function calls

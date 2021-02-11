@@ -710,6 +710,48 @@ static inline uint8_t CO_setUint32(void *buf, uint32_t value) {
     memmove(buf, &value, sizeof(value)); return sizeof(value);
 }
 
+// /**
+//  * CANrx_callback() can read CAN identifier from received CAN message
+//  *
+//  * Must be defined in the **CO_driver_target.h** file.
+//  *
+//  * This is target specific function and is specific for specific
+//  * microcontroller. It is best to implement it by using inline function or
+//  * macro. `rxMsg` parameter should cast to a pointer to structure. For best
+//  * efficiency structure may have the same alignment as CAN registers inside CAN
+//  * module.
+//  *
+//  * @param rxMsg Pointer to received message
+//  * @return 11-bit CAN standard identifier.
+//  */
+// static inline uint16_t CO_CANrxMsg_readIdent(void *rxMsg) {
+//     return 0;
+// }
+
+// /**
+//  * CANrx_callback() can read Data Length Code from received CAN message
+//  *
+//  * See also CO_CANrxMsg_readIdent():
+//  *
+//  * @param rxMsg Pointer to received message
+//  * @return data length in bytes (0 to 8)
+//  */
+// static inline uint8_t CO_CANrxMsg_readDLC(void *rxMsg) {
+//     return 0;
+// }
+
+// /**
+//  * CANrx_callback() can read pointer to data from received CAN message
+//  *
+//  * See also CO_CANrxMsg_readIdent():
+//  *
+//  * @param rxMsg Pointer to received message
+//  * @return pointer to data buffer
+//  */
+// static inline uint8_t *CO_CANrxMsg_readData(void *rxMsg) {
+//     return NULL;
+// }
+
 /** @} */ /* CO_driver */
 
 #ifdef __cplusplus
