@@ -54,6 +54,9 @@ CAN_HandleTypeDef     CanHandle;
 TIM_HandleTypeDef msTimer = {.Instance = TIM4};
 bool nmtChanged = false;
 
+// LED values and pins
+#define GREEN_LED_PIN D8
+#define RED_LED_PIN D9
 volatile uint32_t ledBlinkRate = 1000;
 
 /* Local function definitons */
@@ -80,10 +83,13 @@ int setup(void) {
     /* Configure the system clock to 64 MHz */
     SystemClock_Config();
 
+    setupDebugUart(&debugUartHandle,debugUartBaudRate);
+
+
     /* Initialize BSP Led for LED2 */
     BSP_LED_Init(LED2);
-
-    setupDebugUart(&debugUartHandle,debugUartBaudRate);
+    BspGpioInitOutput(GREEN_LED_PIN);
+    BspGpioInitOutput(RED_LED_PIN);
 
     return 0;
 }
@@ -221,35 +227,18 @@ int main (void){
         /* CANopen process */
         reset = CO_process(CO, (uint32_t)timer1msDiff*1000, NULL);
 
+        // Handle LED Updates
+        LED_red = CO_LED_RED(CO->LEDs, CO_LED_CANopen);
+        LED_green = CO_LED_GREEN(CO->LEDs, CO_LED_CANopen);
+
+        BspGpioWrite(GREEN_LED_PIN,LED_green);
+        BspGpioWrite(RED_LED_PIN,LED_red);
+
         /* Nonblocking application code may go here. */
         if(HAL_GetTick() - lastLedBlinkTime > ledBlinkRate) {
           lastLedBlinkTime = HAL_GetTick();
           BSP_LED_Toggle(LED2);
         }
-
-
-      // uint32_t TxMailbox;
-      // CAN_TxHeaderTypeDef TxHeader;
-      // uint8_t TxData[8] = {0};
-
-      // TxHeader.StdId = 0x12;
-      // TxHeader.RTR = CAN_RTR_DATA;
-      // TxHeader.IDE = CAN_ID_STD;
-      // TxHeader.DLC = 1;
-      // TxHeader.TransmitGlobalTime = DISABLE;
-      // TxData[0] = 0xCA;
-
-      // /* Request transmission */
-      // if(HAL_CAN_AddTxMessage(&CanHandle, &TxHeader, TxData, &TxMailbox) != HAL_OK)
-      // {
-      //   /* Transmission request Error */
-      //   Error_Handler();
-      // }
-
-      // /* Wait transmission complete */
-      // while(HAL_CAN_GetTxMailboxesFreeLevel(&CanHandle) != 3) {}
-
-
         /* Process EEPROM */
 
         /* optional sleep for short time */
