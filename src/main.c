@@ -1,169 +1,288 @@
-/**
-  ******************************************************************************
-  * @file    UART/UART_Printf/Src/main.c
-  * @author  MCD Application Team
-  * @brief   This example shows how to retarget the C library printf function
-  *          to the UART.
-  ******************************************************************************
-  * @attention
-  *
-  * <h2><center>&copy; Copyright (c) 2016 STMicroelectronics.
-  * All rights reserved.</center></h2>
-  *
-  * This software component is licensed by ST under BSD 3-Clause license,
-  * the "License"; You may not use this file except in compliance with the
-  * License. You may obtain a copy of the License at:
-  *                        opensource.org/licenses/BSD-3-Clause
-  *
-  ******************************************************************************
-  */
+/*
+ * CANopen main program file.
+ *
+ * This file is a template for other microcontrollers.
+ *
+ * @file        main_generic.c
+ * @author      Janez Paternoster
+ * @copyright   2004 - 2020 Janez Paternoster
+ *
+ * This file is part of CANopenNode, an opensource CANopen Stack.
+ * Project home page is <https://github.com/CANopenNode/CANopenNode>.
+ * For more information on CANopen see <http://www.can-cia.org/>.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
-/* Includes ------------------------------------------------------------------*/
+
+#include "targetSpecific.h"
 #include "targetCommon.h"
-#include "config.h"
+//#include "config.h"
 #include "Uart.h"
-#include "DataCollection.h"
+//#include "DataCollection.h"
 #include "stdio.h"
 #include "stdbool.h"
+#include "CANopen.h"
 
 
-/** @addtogroup STM32F1xx_HAL_Examples
-  * @{
-  */
+#define TMR_TASK_INTERVAL   (1000)          /* Interval of tmrTask thread in microseconds */
+#define INCREMENT_1MS(var)  (var++)         /* Increment 1ms variable in tmrTask */
 
-/** @addtogroup UART_Printf
-  * @{
-  */
+#define log_printf(macropar_message, ...) \
+        printf(macropar_message, ##__VA_ARGS__)
 
-/* Private typedef -----------------------------------------------------------*/
-/* Private define ------------------------------------------------------------*/
-/* Private macro -------------------------------------------------------------*/
-/* Private variables ---------------------------------------------------------*/
+
+/* Global variables and objects */
+volatile uint16_t   CO_timer1ms = 0U;   /* variable increments each millisecond */
+uint8_t LED_red, LED_green;
+
 /* UART handler declaration */
 UART_HandleTypeDef debugUartHandle;
 const uint32_t debugUartBaudRate = 115200;
 
-
 CAN_HandleTypeDef     CanHandle;
-CAN_TxHeaderTypeDef   TxHeader;
-CAN_RxHeaderTypeDef   RxHeader;
-uint8_t               TxData[8];
-uint8_t               RxData[8];
-uint32_t              TxMailbox;
-uint32_t              RxMailbox;
+TIM_HandleTypeDef coThreadTimer = {.Instance = TIM4};
+bool nmtChanged = false;
 
-/* Private function prototypes -----------------------------------------------*/
+// LED values and pins
+#define GREEN_LED_PIN D8
+#define RED_LED_PIN D9
+#define DEBUG_GPIO_PIN D4
+volatile uint32_t ledBlinkRate = 1000;
+
+/* Local function definitons */
+int setup(void);
 void SystemClock_Config(void);
 static void Error_Handler(void);
 static void setupDebugUart(UART_HandleTypeDef *huart, uint32_t buadRate);
-static HAL_StatusTypeDef CAN_Polling(void);
+void NMT_Changed_Callback(CO_NMT_internalState_t state);
+void printSync(void *object);
+void systemSoftwareReset();
+HAL_StatusTypeDef configCOThreadTimer(TIM_HandleTypeDef *timer, uint32_t abp2Clock, uint32_t inputDivider);
+void stopCOThreadTimer(TIM_HandleTypeDef *timer);
+void startCOThreadTimer(TIM_HandleTypeDef *timer);
 
-bool collectData();
-bool collectDataUART();
-
-/* Private functions ---------------------------------------------------------*/
-
+/* setup **********************************************************************/
 int setup(void) {
-  /* STM32F103xB HAL library initialization:
-       - Configure the Flash prefetch
-       - Systick timer is configured by default as source of time base, but user 
-         can eventually implement his proper time base source (a general purpose 
-         timer for example or other time source), keeping in mind that Time base 
-         duration should be kept 1ms since PPP_TIMEOUT_VALUEs are defined and 
-         handled in milliseconds basis.
-       - Set NVIC Group Priority to 4
-       - Low Level Initialization
-     */
-  HAL_Init();
+    /* STM32F103xB HAL library initialization:
+        - Configure the Flash prefetch
+        - Systick timer is configured by default as source of time base, but user 
+            can eventually implement his proper time base source (a general purpose 
+            timer for example or other time source), keeping in mind that Time base 
+            duration should be kept 1ms since PPP_TIMEOUT_VALUEs are defined and 
+            handled in milliseconds basis.
+        - Set NVIC Group Priority to 4
+        - Low Level Initialization
+        */
+    HAL_Init();
 
-  /* Configure the system clock to 64 MHz */
-  SystemClock_Config();
+    /* Configure the system clock to 64 MHz */
+    SystemClock_Config();
 
-  /* Initialize BSP Led for LED2 */
-  BSP_LED_Init(LED2);
+    setupDebugUart(&debugUartHandle,debugUartBaudRate);
 
-  setupDebugUart(&debugUartHandle,debugUartBaudRate);
 
-  return 0;
+    /* Initialize BSP Led for LED2 */
+    BSP_LED_Init(LED2);
+    BspGpioInitOutput(GREEN_LED_PIN);
+    BspGpioInitOutput(RED_LED_PIN);
+    BspGpioInitOutput(DEBUG_GPIO_PIN);
+    
+
+    return 0;
+}
+
+
+/* main ***********************************************************************/
+int main (void){
+  CO_ReturnError_t err;
+  CO_NMT_reset_cmd_t reset = CO_RESET_NOT;
+  uint32_t heapMemoryUsed;
+  void *CANmoduleAddress = &CanHandle; /* CAN module address */
+  uint8_t activeNodeId = 0x20; /* Copied from CO_pendingNodeId in the communication reset section */
+  uint16_t pendingBitRate = 1000;  /* read from dip switches or nonvolatile memory, configurable by LSS slave */
+
+  /* Configure microcontroller. */
+  setup();
+
+  /* Allocate memory but these are statically allocated so no malloc */
+  err = CO_new(&heapMemoryUsed);
+  if (err != CO_ERROR_NO) {
+      log_printf("Error: Can't allocate memory\r\n");
+      return 0;
+  }
+  else {
+      log_printf("Allocated %d bytes for CANopen objects\r\n", heapMemoryUsed);
   }
 
-/**
-  * @brief  Main program
-  * @param  None
-  * @retval None
-  */
-int main(void)
-{
-  // Run the set up code 
-  setup();
-  
+  while(reset != CO_RESET_APP){
+/* CANopen communication reset - initialize CANopen objects *******************/
+    uint16_t timer1msPrevious;
 
-  // How to enable millis counter...
+    log_printf("CANopenNode - Reset communication...\r\n");
 
-  char *msg = "Starting\r\n";
+    /* disable CAN and CAN interrupts */
 
-  UART_putString(&debugUartHandle, msg); 
+    /* initialize CANopen */
+    err = CO_CANinit(CANmoduleAddress, pendingBitRate);
+    if (err != CO_ERROR_NO) {
+        log_printf("Error: CAN initialization failed: %d\r\n", err);
+        return 0;
+    }
 
-  UART_putString(&debugUartHandle, "Temp\r\n");
-  printf("Hello from printf\r\n");
+    err = CO_CANopenInit(activeNodeId);
+    if(err != CO_ERROR_NO && err != CO_ERROR_NODE_ID_UNCONFIGURED_LSS) {
+        log_printf("Error: CANopen initialization failed: %d\r\n", err);
+        return 0;
+    }
 
-  bool newData = false;
-  uint32_t lastDataCollectTime = 0U;
+    // Reset timer just inscase the registers were not reset
+    stopCOThreadTimer(&coThreadTimer);
 
-  CAN_Polling();
+    /* Configure Timer interrupt function for execution every 1 millisecond */
+    // Using timer 4
+    // Timer 4 input clock is APB1
+    // As of now APB1 is 32Mhz
+    // The Timer 4 clock input is multiplied by 2 so 64 Mhz.    
+    // Input = 64 Mhz
+    configCOThreadTimer(&coThreadTimer,64,TIM_CLOCKDIVISION_DIV1);
 
-  /* Main Loop */
-  // while (1)
-  // {
-  //   // Get new sensor Data
-  //   // Periodic task that runs every few milliseconds
-  //   if(lastDataCollectTime > HAL_GetTick() + DATA_COLLECTION_RATE) {
-  //     collectDataUART();
-      
-  //     //collectData();
+    // Start CO thread timer
+    startCOThreadTimer(&coThreadTimer);
 
-  //     //filterData()
+    // Set up NMT call back function to print out messages when state has changed
+    CO_NMT_initCallbackChanged(CO->NMT, NMT_Changed_Callback);
 
-  //     newData = true;
-  //   }
+    /* start CAN */
+    CO_CANsetNormalMode(CO->CANmodule[0]);
 
-  //   // Send sensor data if requested
+    reset = CO_RESET_NOT;
+    timer1msPrevious = CO_timer1ms;
 
-  //   // Validate data is within range
+    log_printf("CANopenNode - Running...\r\n");
+    fflush(stdout);
 
-  // }
+    uint32_t lastLedBlinkTime = HAL_GetTick();
+
+    while(reset == CO_RESET_NOT){
+/* loop for normal program execution ******************************************/
+        // Toggle an gpio to do some timing
+
+        uint16_t timer1msCopy, timer1msDiff;
+
+        timer1msCopy = CO_timer1ms;
+        timer1msDiff = timer1msCopy - timer1msPrevious;
+        timer1msPrevious = timer1msCopy;
+
+
+        /* CANopen process */
+        reset = CO_process(CO, (uint32_t)timer1msDiff*1000, NULL);
+        if(reset == CO_RESET_APP) {
+          // Do a software reset
+          systemSoftwareReset();
+        }
+
+        // Handle LED Updates
+        LED_red = CO_LED_RED(CO->LEDs, CO_LED_CANopen);
+        LED_green = CO_LED_GREEN(CO->LEDs, CO_LED_CANopen);
+
+        BspGpioWrite(GREEN_LED_PIN,LED_green);
+        BspGpioWrite(RED_LED_PIN,LED_red);
+
+        /* Nonblocking application code may go here. */
+        if(HAL_GetTick() - lastLedBlinkTime > ledBlinkRate) {
+          lastLedBlinkTime = HAL_GetTick();
+          BSP_LED_Toggle(LED2);
+        }
+        /* Process EEPROM */
+
+        /* optional sleep for short time */
+    }
+  }
+
+  // We shouldn't get here
+  // this means a reset quit was sent
+  BspGpioWrite(GREEN_LED_PIN,1);
+  BspGpioWrite(RED_LED_PIN,1);
+
+/* program exit ***************************************************************/
+    /* stop threads */
+
+
+    /* delete objects from memory */
+    CO_delete((void*) &CanHandle);
+
+    log_printf("CANopenNode finished\r\n");
+
+    /* reset */
+    return 0;
 }
 
-/*
- * PURPOSE
- *      This function is used to be a substitute for using the real collect data function. This
- *      function should be used with a program to send sensor data over UART. The UART being use
- *      should be set up ahead of time and be a global UART
- * PARAMETERS
- *      None
- * RETURNS
- *      bool - whether data was collected without error
- */
-bool collectDataUART() {
-    // Collect data from UART
-    uint8_t dataBuff[sizeof(struct ShockSensorData)];
 
-    int status = HAL_UART_Receive(&debugUartHandle,&dataBuff,
-                                  sizeof(struct ShockSensorData),0xffff);
+/* timer thread executes in constant intervals ********************************/
+void tmrTask_thread(void){
+  BspGpioToggle(DEBUG_GPIO_PIN);
+  INCREMENT_1MS(CO_timer1ms);
+  if(CO->CANmodule[0]->CANnormal) {
+      bool_t syncWas;
 
-    // Copy the received data to the buffer
-    memcpy(&sensorDataBuffer,dataBuff,sizeof(struct ShockSensorData));
+      /* Process Sync */
+      syncWas = CO_process_SYNC(CO, TMR_TASK_INTERVAL, NULL);
 
-    return (status != HAL_OK);
+      /* Read inputs */
+      CO_process_RPDO(CO, syncWas);
+
+      /* Further I/O or nonblocking application code may go here. */
+
+      /* Write outputs */
+      CO_process_TPDO(CO, syncWas, TMR_TASK_INTERVAL, NULL);
+
+      /* verify timer overflow */
+      if(0) {
+          CO_errorReport(CO->em, CO_EM_ISR_TIMER_OVERFLOW, CO_EMC_SOFTWARE_INTERNAL, 0U);
+      }
+  }
 }
 
+void NMT_Changed_Callback(CO_NMT_internalState_t state) {
+  switch (CO->NMT->operatingState)
+  {
+  case CO_NMT_INITIALIZING:
+    ledBlinkRate = 2000;
+    break;
+  case CO_NMT_STOPPED:
+    ledBlinkRate = 100;
+    break;
+  case CO_NMT_PRE_OPERATIONAL:
+    ledBlinkRate = 1000;
+    break;
+  case CO_NMT_OPERATIONAL:
+    ledBlinkRate = 500;
+    break;
+  default:
+    ledBlinkRate = 100;
+    break;
+  }
+  printf("Entering state %d\r\n",state);
+}
+
+// Micro controller specific function calls
 /**
   * @brief  Retargets the C library printf function to the USART.
   * @param  None
   * @retval None
   */
-int _write(int fd, char * ptr, int len)
-{
+int _write(int fd, char * ptr, int len){
   /* Place your implementation of fputc here */
   /* e.g. write a character to the USART1 and Loop until the end of transmission */
   HAL_UART_Transmit(&debugUartHandle, (uint8_t *)ptr, len, 0xFFFF); 
@@ -185,8 +304,7 @@ int _write(int fd, char * ptr, int len)
   * @param  None
   * @retval None
   */
-void SystemClock_Config(void)
-{
+void SystemClock_Config(void){
   RCC_ClkInitTypeDef clkinitstruct = {0};
   RCC_OscInitTypeDef oscinitstruct = {0};
   
@@ -223,25 +341,6 @@ void SystemClock_Config(void)
   }
 }
 
-
-/**
-  * @brief  This function is executed in case of error occurrence.
-  * @param  None
-  * @retval None
-  */
-static void Error_Handler(void)
-{
-  /* Turn LED2 on */
-  
-  while (1)
-  {
-    BSP_LED_On(LED2);
-    HAL_Delay(500);
-    BSP_LED_Off(LED2);
-    HAL_Delay(500);
-  }
-}
-
 static void setupDebugUart(UART_HandleTypeDef *huart, uint32_t buadRate) {
   debugUartHandle.Instance        = USARTx;
 
@@ -259,112 +358,90 @@ static void setupDebugUart(UART_HandleTypeDef *huart, uint32_t buadRate) {
 }
 
 /**
-  * @brief  Configures the CAN, transmit and receive by polling
+  * @brief  This function is executed in case of error occurrence.
   * @param  None
-  * @retval PASSED if the reception is well done, FAILED in other case
+  * @retval None
   */
-HAL_StatusTypeDef CAN_Polling(void)
-{
-  CAN_FilterTypeDef  sFilterConfig;
+static void Error_Handler(void){
+  /* Turn LED2 on */
   
-  /*##-1- Configure the CAN peripheral #######################################*/
-  CanHandle.Instance = CANx;
-    
-  CanHandle.Init.TimeTriggeredMode = DISABLE;
-  CanHandle.Init.AutoBusOff = DISABLE;
-  CanHandle.Init.AutoWakeUp = DISABLE;
-  CanHandle.Init.AutoRetransmission = ENABLE;
-  CanHandle.Init.ReceiveFifoLocked = DISABLE;
-  CanHandle.Init.TransmitFifoPriority = DISABLE;
-  CanHandle.Init.Mode = CAN_MODE_NORMAL;
-  CanHandle.Init.SyncJumpWidth = CAN_SJW_1TQ;
-  CanHandle.Init.TimeSeg1 = CAN_BS1_13TQ;
-  CanHandle.Init.TimeSeg2 = CAN_BS2_2TQ;
-  CanHandle.Init.Prescaler = 4;
-
-  // 500kbps use Sync of 1, Seg1 of 13, Seg2 of 2, and prescale of 4
-  // 100kbps use Sync of 1, Seg1 of 13, Seg2 of 2, and prescale of 20
-
-  // Used this website to get config values
-  // http://www.bittiming.can-wiki.info/
-  // Used a APB2 clock of 32 MHz and a CAN baud rate of 500kbps
-  
-  if(HAL_CAN_Init(&CanHandle) != HAL_OK)
+  while (1)
   {
-    /* Initialization Error */
-    Error_Handler();
+    BSP_LED_On(LED2);
+    HAL_Delay(500);
+    BSP_LED_Off(LED2);
+    HAL_Delay(500);
   }
-
-  /*##-2- Configure the CAN Filter ###########################################*/
-  sFilterConfig.FilterBank = 0;
-  sFilterConfig.FilterMode = CAN_FILTERMODE_IDMASK;
-  sFilterConfig.FilterScale = CAN_FILTERSCALE_32BIT;
-  sFilterConfig.FilterIdHigh = 0x0000;
-  sFilterConfig.FilterIdLow = 0x0000;
-  sFilterConfig.FilterMaskIdHigh = 0x0000;
-  sFilterConfig.FilterMaskIdLow = 0x0000;
-  sFilterConfig.FilterFIFOAssignment = CAN_RX_FIFO0;
-  sFilterConfig.FilterActivation = ENABLE;
-  sFilterConfig.SlaveStartFilterBank = 14;
-  
-  if(HAL_CAN_ConfigFilter(&CanHandle, &sFilterConfig) != HAL_OK)
-  {
-    /* Filter configuration Error */
-    Error_Handler();
-  }
-
-  /*##-3- Start the CAN peripheral ###########################################*/
-  if (HAL_CAN_Start(&CanHandle) != HAL_OK)
-  {
-    /* Start Error */
-    Error_Handler();
-  }
-
-  // Wait for main controller to send a request
-  UART_putString(&debugUartHandle,"Waiting for message\r\n");
-  while(HAL_CAN_GetRxFifoFillLevel(&CanHandle,CAN_RX_FIFO0) == 0) {
-    uint32_t recError = CanHandle.Instance->ESR & CAN_ESR_REC_Msk;
-    if(recError > 0) {
-      printf("%d\r\n",recError);
-    }
-  }
-
-  if(HAL_CAN_GetRxMessage(&CanHandle, CAN_RX_FIFO0, &RxHeader, RxData) != HAL_OK)
-  {
-    /* Reception Error */
-    Error_Handler();
-  }
-
-  if((RxHeader.StdId != 0x20)                     ||
-     (RxHeader.RTR != CAN_RTR_DATA)               ||
-     (RxHeader.IDE != CAN_ID_STD))
-  {
-    /* Rx message Error */
-    return HAL_ERROR;
-  }
-
-  UART_putString(&debugUartHandle,"Got CAN message\r\n");
-  printf("%x%x\r\n",RxData[0],RxData[1]);
-
-  // Send requested data
-  TxHeader.StdId = 0x12;
-  TxHeader.RTR = CAN_RTR_DATA;
-  TxHeader.IDE = CAN_ID_STD;
-  TxHeader.DLC = 1;
-  TxHeader.TransmitGlobalTime = DISABLE;
-  TxData[0] = 0xCA;
-  
-  /* Request transmission */
-  if(HAL_CAN_AddTxMessage(&CanHandle, &TxHeader, TxData, &TxMailbox) != HAL_OK)
-  {
-    /* Transmission request Error */
-    Error_Handler();
-  }
-  
-  /* Wait transmission complete */
-  while(HAL_CAN_GetTxMailboxesFreeLevel(&CanHandle) != 3) {}
-  
-
-  return HAL_OK; /* Test Passed */
 }
 
+
+// This function is called when any timer hits its period value
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
+    if(htim->Instance == coThreadTimer.Instance) {
+        // Run the next iteration of the CO interrupt
+        tmrTask_thread();
+    }
+}
+
+// Configure a timer to run at a 1ms interrupt rate. The goal is to make the clock input 1MHz
+HAL_StatusTypeDef configCOThreadTimer(TIM_HandleTypeDef *timer, uint32_t abp2Clock, uint32_t inputDivider) {   
+
+    if(IS_TIM_CLOCKDIVISION_DIV(inputDivider) == false) {
+      return HAL_ERROR;
+    }
+
+    if(abp2Clock == 0) {
+      return HAL_ERROR;
+    }
+
+    // Input = 64 Mhz
+    // Interal divider = 1
+    // Prescaler = 64
+    // Clock rate = (Input)/(Interal divider * prescaler)
+    //            = (64 MHz)/(64) = 1 Mhz
+
+    uint32_t prescalar = abp2Clock / inputDivider;
+    if(prescalar < 0) {
+      return HAL_ERROR;
+    }
+
+    // Prescaler and period need to be subtracted by 1 to count at the right rate
+    timer->Init.Prescaler = prescalar-1;
+    timer->Init.CounterMode = TIM_COUNTERMODE_UP;
+    timer->Init.Period = 1000-1;
+    timer->Init.AutoReloadPreload = 0;
+    timer->Init.ClockDivision = inputDivider;
+    timer->Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
+
+    return HAL_OK;
+}
+
+// Stops the timer passed into it
+void stopCOThreadTimer(TIM_HandleTypeDef *timer) {
+  // Stop timer
+  HAL_TIM_Base_Stop_IT(timer);
+
+  // Prevent interrupts from firing
+  HAL_TIM_Base_DeInit(timer);
+}
+
+// Starts the timer passed into it
+void startCOThreadTimer(TIM_HandleTypeDef *timer) {
+  // Initalize timer device
+  HAL_TIM_Base_Init(timer);
+
+  // Enable interrupts for timer
+  HAL_TIM_Base_Start_IT(timer);
+}
+
+void systemSoftwareReset() {
+  NVIC_SystemReset();
+}
+
+void HAL_CAN_ErrorCallback(CAN_HandleTypeDef *hcan){
+  if(hcan->ErrorCode >= HAL_CAN_ERROR_BOF)
+  {
+    assert_param(hcan);
+  }
+  printf("CAN error: 0x%lx\r\n",hcan->ErrorCode);
+}

@@ -58,15 +58,75 @@
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f1xx_hal.h"
    
-   
-/** @defgroup STM32F1XX_NUCLEO_Exported_Types STM32F1XX NUCLEO Exported Types
-  * @{
-  */
+//-----------------------------------------------------------------------------
+// Low level GPIO constants
+// Arduino pin constants
+enum ArduinoDigitalPins {
+  D13 = 0,
+  D12 = 1,
+  D11 = 2,
+  D10 = 3,
+  D9  = 4,
+  D8  = 5,
+  D7  = 6,
+  D6  = 7,
+  D5  = 8,
+  D4  = 9,
+  D3  = 10,
+  D2  = 11,
+  Count = 12};
+
+#define D13_GPIO_PORT GPIOA
+#define D12_GPIO_PORT GPIOA
+#define D11_GPIO_PORT GPIOA
+#define D10_GPIO_PORT GPIOB
+#define D9_GPIO_PORT GPIOC
+#define D8_GPIO_PORT GPIOA
+#define D7_GPIO_PORT GPIOA
+#define D6_GPIO_PORT GPIOB
+#define D5_GPIO_PORT GPIOB
+#define D4_GPIO_PORT GPIOB
+#define D3_GPIO_PORT GPIOB
+#define D2_GPIO_PORT GPIOA
+
+#define D13_PIN GPIO_PIN_5
+#define D12_PIN GPIO_PIN_6
+#define D11_PIN GPIO_PIN_7
+#define D10_PIN GPIO_PIN_5
+#define D9_PIN GPIO_PIN_7
+#define D8_PIN GPIO_PIN_9
+#define D7_PIN GPIO_PIN_8
+#define D6_PIN GPIO_PIN_10
+#define D5_PIN GPIO_PIN_4
+#define D4_PIN GPIO_PIN_5
+#define D3_PIN GPIO_PIN_3
+#define D2_PIN GPIO_PIN_10
+
+#define Dx_GPIOA_CLK_ENABLE()                 __HAL_RCC_GPIOA_CLK_ENABLE()
+#define Dx_GPIOA_CLK_DISABLE()                __HAL_RCC_GPIOA_CLK_DISABLE()  
+
+#define Dx_GPIOB_CLK_ENABLE()                 __HAL_RCC_GPIOB_CLK_ENABLE()
+#define Dx_GPIOB_CLK_DISABLE()                __HAL_RCC_GPIOB_CLK_DISABLE()  
+
+#define Dx_GPIOC_CLK_ENABLE()                 __HAL_RCC_GPIOC_CLK_ENABLE()
+#define Dx_GPIOC_CLK_DISABLE()                __HAL_RCC_GPIOC_CLK_DISABLE()  
+
+#define Dx_GPIOD_CLK_ENABLE()                 __HAL_RCC_GPIOD_CLK_ENABLE()
+#define Dx_GPIOD_CLK_DISABLE()                __HAL_RCC_GPIOD_CLK_DISABLE()  
+
+void BspGpioInitOutput(enum ArduinoDigitalPins digitalPin);
+
+void BspGpioDeinit(enum ArduinoDigitalPins digitalPin); 
+
+void BspGpioWrite(enum ArduinoDigitalPins digitalPin, uint8_t outputHigh);
+
+void BspGpioToggle(enum ArduinoDigitalPins digitalPin);
+
 typedef enum 
 {
-  LED2 = 0,
-  LED_GREEN = LED2
-} Led_TypeDef;
+  LED2 = D13
+  //LED2=0
+}Led_TypeDef;
 
 typedef enum 
 {  
