@@ -38,6 +38,7 @@
  * message with correct identifier will be received. For more information and
  * description of parameters see file CO_driver.h.
  */
+uint32_t syncsRec = 0;
 static void CO_SYNC_receive(void *object, void *msg) {
     CO_SYNC_t *SYNC;
     CO_NMT_internalState_t operState;
@@ -48,6 +49,7 @@ static void CO_SYNC_receive(void *object, void *msg) {
     if((operState == CO_NMT_OPERATIONAL) || (operState == CO_NMT_PRE_OPERATIONAL)){
         uint8_t DLC = CO_CANrxMsg_readDLC(msg);
 
+        syncsRec++;
         if(SYNC->counterOverflowValue == 0){
             if(DLC == 0U){
                 CO_FLAG_SET(SYNC->CANrxNew);

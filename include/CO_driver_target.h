@@ -98,19 +98,22 @@ extern "C" {
 
 #ifndef CO_CONFIG_SYNC
 #define CO_CONFIG_SYNC (CO_CONFIG_SYNC_ENABLE | \
-                        CO_CONFIG_SYNC_PRODUCER | \
                         CO_CONFIG_FLAG_CALLBACK_PRE | \
                         CO_CONFIG_FLAG_TIMERNEXT)
+/*#define CO_CONFIG_SYNC (CO_CONFIG_SYNC_ENABLE | \
+                        CO_CONFIG_SYNC_PRODUCER | \
+                        CO_CONFIG_FLAG_CALLBACK_PRE | \
+                        CO_CONFIG_FLAG_TIMERNEXT)*/
 #endif
 
 #ifndef CO_CONFIG_PDO
-/* #define CO_CONFIG_PDO (CO_CONFIG_RPDO_ENABLE | \
+ #define CO_CONFIG_PDO (CO_CONFIG_RPDO_ENABLE | \
                        CO_CONFIG_TPDO_ENABLE | \
                        CO_CONFIG_PDO_SYNC_ENABLE | \
                        CO_CONFIG_RPDO_CALLS_EXTENSION | \
                        CO_CONFIG_TPDO_CALLS_EXTENSION | \
                        CO_CONFIG_FLAG_CALLBACK_PRE | \
-                       CO_CONFIG_FLAG_TIMERNEXT)*/
+                       CO_CONFIG_FLAG_TIMERNEXT)
 #endif
 
 #ifndef CO_CONFIG_LEDS
@@ -119,9 +122,9 @@ extern "C" {
 #endif
 
 #ifndef CO_CONFIG_GFC
-#define CO_CONFIG_GFC (CO_CONFIG_GFC_ENABLE | \
+/*#define CO_CONFIG_GFC (CO_CONFIG_GFC_ENABLE | \
                        CO_CONFIG_GFC_CONSUMER | \
-                       CO_CONFIG_GFC_PRODUCER)
+                       CO_CONFIG_GFC_PRODUCER)*/
 #endif
 
 #ifndef CO_CONFIG_SRDO
@@ -178,9 +181,9 @@ extern "C" {
 
 /* Basic definitions. If big endian, CO_SWAP_xx macros must swap bytes. */
 #define CO_LITTLE_ENDIAN
-#define CO_SWAP_16(x) x
-#define CO_SWAP_32(x) x
-#define CO_SWAP_64(x) x
+#define CO_SWAP_16(x) __builtin_bswap16(x)
+#define CO_SWAP_32(x) __builtin_bswap32(x)
+#define CO_SWAP_64(x) __builtin_bswap64(x)
 /* NULL is defined in stddef.h */
 /* true and false are defined in stdbool.h */
 /* int8_t to uint64_t are defined in stdint.h */

@@ -57,6 +57,7 @@ bool nmtChanged = false;
 // LED values and pins
 #define GREEN_LED_PIN D8
 #define RED_LED_PIN D9
+#define DEBUG_GPIO_PIN D4
 volatile uint32_t ledBlinkRate = 1000;
 
 /* Local function definitons */
@@ -65,6 +66,8 @@ void SystemClock_Config(void);
 static void Error_Handler(void);
 static void setupDebugUart(UART_HandleTypeDef *huart, uint32_t buadRate);
 void NMT_Changed_Callback(CO_NMT_internalState_t state);
+void printSync(void *object);
+void systemSoftwareReset();
 
 /* setup **********************************************************************/
 int setup(void) {
@@ -90,6 +93,8 @@ int setup(void) {
     BSP_LED_Init(LED2);
     BspGpioInitOutput(GREEN_LED_PIN);
     BspGpioInitOutput(RED_LED_PIN);
+    BspGpioInitOutput(DEBUG_GPIO_PIN);
+    
 
     return 0;
 }
@@ -102,7 +107,7 @@ int main (void){
   uint32_t heapMemoryUsed;
   void *CANmoduleAddress = &CanHandle; /* CAN module address */
   uint8_t activeNodeId = 0x20; /* Copied from CO_pendingNodeId in the communication reset section */
-  uint16_t pendingBitRate = 500;  /* read from dip switches or nonvolatile memory, configurable by LSS slave */
+  uint16_t pendingBitRate = 1000;  /* read from dip switches or nonvolatile memory, configurable by LSS slave */
 
   /* Configure microcontroller. */
   setup();
@@ -204,6 +209,8 @@ int main (void){
     // Set up NMT call back function to print out messages when state has changed
     CO_NMT_initCallbackChanged(CO->NMT, NMT_Changed_Callback);
 
+    //CO_SYNC_initCallbackPre(CO->SYNC,NULL,printSync);
+
     /* start CAN */
     CO_CANsetNormalMode(CO->CANmodule[0]);
 
@@ -217,6 +224,8 @@ int main (void){
 
     while(reset == CO_RESET_NOT){
 /* loop for normal program execution ******************************************/
+        // Toggle an gpio to do some timing
+
         uint16_t timer1msCopy, timer1msDiff;
 
         timer1msCopy = CO_timer1ms;
@@ -226,6 +235,10 @@ int main (void){
 
         /* CANopen process */
         reset = CO_process(CO, (uint32_t)timer1msDiff*1000, NULL);
+        if(reset == CO_RESET_APP) {
+          // Do a software reset
+          systemSoftwareReset();
+        }
 
         // Handle LED Updates
         LED_red = CO_LED_RED(CO->LEDs, CO_LED_CANopen);
@@ -245,6 +258,10 @@ int main (void){
     }
   }
 
+  // We shouldn't get here
+  // this means a reset quit was sent
+  BspGpioWrite(GREEN_LED_PIN,1);
+  BspGpioWrite(RED_LED_PIN,1);
 
 /* program exit ***************************************************************/
     /* stop threads */
@@ -262,6 +279,7 @@ int main (void){
 
 /* timer thread executes in constant intervals ********************************/
 void tmrTask_thread(void){
+  BspGpioToggle(DEBUG_GPIO_PIN);
   INCREMENT_1MS(CO_timer1ms);
   if(CO->CANmodule[0]->CANnormal) {
       bool_t syncWas;
@@ -310,6 +328,7 @@ void NMT_Changed_Callback(CO_NMT_internalState_t state) {
     ledBlinkRate = 100;
     break;
   }
+  printf("Entering state %d\r\n",state);
 }
 
 // Micro controller specific function calls
@@ -418,6 +437,20 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
     if(htim->Instance == TIM4) {
         tmrTask_thread();
     }
-    
-    
+}
+
+void printSync(void *object) {
+  //UART_putString(&debugUartHandle,"sync\r\n");
+}
+
+void systemSoftwareReset() {
+  NVIC_SystemReset();
+}
+
+void HAL_CAN_ErrorCallback(CAN_HandleTypeDef *hcan){
+  if(hcan->ErrorCode >= HAL_CAN_ERROR_BOF)
+  {
+    assert_param(hcan);
+  }
+  printf("CAN error: 0x%lx\r\n",hcan->ErrorCode);
 }

@@ -39,11 +39,14 @@ static CAN_RxHeaderTypeDef RxHeader;
 static CAN_HandleTypeDef *CanHandle = NULL;
 
 // pointer to CO_CanModule used in CubeMX CAN Rx interrupt routine*/
-static CO_CANmodule_t* RxFifo_Callback_CanModule_p = NULL;
+static CO_CANmodule_t* CanFifo_Callback_CanModule_p = NULL;
 
 // Private function declarations
 static inline void prepareTxHeader(CAN_TxHeaderTypeDef *TxHeader, CO_CANtx_t *buffer);
+
+// Declare functions here so we can use them
 void CO_CANInterruptRx(CO_CANmodule_t *CANmodule);
+void CO_CANInterruptTx(CO_CANmodule_t *CANmodule);
 
 // Custom functions for STM32 implementation of CANOpen
 static inline void prepareTxHeader(CAN_TxHeaderTypeDef *TxHeader, CO_CANtx_t *buffer) {
@@ -64,19 +67,36 @@ static inline void prepareTxHeader(CAN_TxHeaderTypeDef *TxHeader, CO_CANtx_t *bu
 }
 
 void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan) {
-    if(RxFifo_Callback_CanModule_p != NULL)
+    if(CanFifo_Callback_CanModule_p != NULL)
 	{
-		CO_CANInterruptRx(RxFifo_Callback_CanModule_p);
+		CO_CANInterruptRx(CanFifo_Callback_CanModule_p);
 	}
 }
 
 void HAL_CAN_RxFifo1MsgPendingCallback(CAN_HandleTypeDef *hcan) {
-    if(RxFifo_Callback_CanModule_p != NULL)
+    if(CanFifo_Callback_CanModule_p != NULL)
 	{
-		CO_CANInterruptRx(RxFifo_Callback_CanModule_p);
+		CO_CANInterruptRx(CanFifo_Callback_CanModule_p);
 	}
 }
 
+void HAL_CAN_TxMailbox0CompleteCallback(CAN_HandleTypeDef *hcan) {
+    if(CanFifo_Callback_CanModule_p != NULL) {
+        CO_CANInterruptTx(CanFifo_Callback_CanModule_p);
+    }
+}
+
+void HAL_CAN_TxMailbox1CompleteCallback(CAN_HandleTypeDef *hcan) {
+    if(CanFifo_Callback_CanModule_p != NULL) {
+        CO_CANInterruptTx(CanFifo_Callback_CanModule_p);
+    }
+}
+
+void HAL_CAN_TxMailbox2CompleteCallback(CAN_HandleTypeDef *hcan) {
+    if(CanFifo_Callback_CanModule_p != NULL) {
+        CO_CANInterruptTx(CanFifo_Callback_CanModule_p);
+    }
+}
 
 /******************************************************************************/
 void CO_CANsetConfigurationMode(void *CANptr){
@@ -90,7 +110,8 @@ void CO_CANsetNormalMode(CO_CANmodule_t *CANmodule){
     if(((CAN_HandleTypeDef *)(CANmodule->CANptr))->Instance == CAN1) {
         if(HAL_CAN_Start(CANmodule->CANptr) == HAL_OK) {
             if(HAL_CAN_ActivateNotification(CanHandle,
-                CAN_IT_RX_FIFO0_MSG_PENDING | CAN_IT_RX_FIFO1_MSG_PENDING | CAN_IT_TX_MAILBOX_EMPTY)
+                CAN_IT_RX_FIFO0_MSG_PENDING | CAN_IT_RX_FIFO1_MSG_PENDING | CAN_IT_TX_MAILBOX_EMPTY |
+                CAN_IT_ERROR | CAN_IT_BUSOFF | CAN_IT_LAST_ERROR_CODE | CAN_IT_ERROR_PASSIVE | CAN_IT_ERROR_WARNING)
                 != HAL_OK) {
                 /* Notification Error */
                 CANmodule->errinfo = CO_ERROR_TIMEOUT;
@@ -126,7 +147,7 @@ CO_ReturnError_t CO_CANmodule_init(
     }
 
     // Save local pointer to the CO_CAN object so it can be used for interrupts
-    RxFifo_Callback_CanModule_p = CANmodule;
+    CanFifo_Callback_CanModule_p = CANmodule;
 
     /* Configure object variables */
 	CANmodule->CANptr = CANptr;
@@ -175,22 +196,28 @@ CO_ReturnError_t CO_CANmodule_init(
 
     /* Configure CAN timing */
     // Hard coded in rn
-    // TODO: Add different baud rates
     CanHandle->Init.TimeSeg1 = CAN_BS1_13TQ;
     CanHandle->Init.TimeSeg2 = CAN_BS2_2TQ;
-    
 
-    if(CANbitRate != 500) {
-        return CO_ERROR_ILLEGAL_BAUDRATE;
-    }
-
-    CanHandle->Init.Prescaler = 4;
+    switch(CANbitRate) {
+        case 500:
+            CanHandle->Init.Prescaler = 4;
+            break;
+        case 1000:
+            CanHandle->Init.Prescaler = 2;
+            break;
+        default:
+         return CO_ERROR_ILLEGAL_BAUDRATE;
+    }  
 
     if(HAL_CAN_Init(CanHandle) != HAL_OK)
     {
         /* Initialization Error */
         return CO_ERROR_TIMEOUT;
     }
+
+    // Reset the bxCan module incase we didn't do a full power off restart
+    HAL_CAN_ResetError(CanHandle);
 
     /* Configure CAN module hardware filters */
     if(CANmodule->useCANrxFilters){
@@ -545,8 +572,6 @@ void CO_CANInterruptTx(CO_CANmodule_t *CANmodule){
                     buffer->bufferFull = false;
                     CANmodule->CANtxCount--;
                 }
-
-
                 break;                      /* exit for loop */
             }
             buffer++;
