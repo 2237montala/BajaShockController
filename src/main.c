@@ -51,7 +51,7 @@ UART_HandleTypeDef debugUartHandle;
 const uint32_t debugUartBaudRate = 115200;
 
 CAN_HandleTypeDef     CanHandle;
-TIM_HandleTypeDef msTimer = {.Instance = TIM4};
+TIM_HandleTypeDef coThreadTimer = {.Instance = TIM4};
 bool nmtChanged = false;
 
 // LED values and pins
@@ -68,6 +68,9 @@ static void setupDebugUart(UART_HandleTypeDef *huart, uint32_t buadRate);
 void NMT_Changed_Callback(CO_NMT_internalState_t state);
 void printSync(void *object);
 void systemSoftwareReset();
+HAL_StatusTypeDef configCOThreadTimer(TIM_HandleTypeDef *timer, uint32_t abp2Clock, uint32_t inputDivider);
+void stopCOThreadTimer(TIM_HandleTypeDef *timer);
+void startCOThreadTimer(TIM_HandleTypeDef *timer);
 
 /* setup **********************************************************************/
 int setup(void) {
@@ -122,15 +125,6 @@ int main (void){
       log_printf("Allocated %d bytes for CANopen objects\r\n", heapMemoryUsed);
   }
 
-  /* initialize EEPROM */
-
-
-  /* increase variable each startup. Variable is stored in EEPROM. */
-  //OD_powerOnCounter++;
-
-  //log_printf("CANopenNode - Reset application, count = %d\r\n", OD_powerOnCounter);
-
-
   while(reset != CO_RESET_APP){
 /* CANopen communication reset - initialize CANopen objects *******************/
     uint16_t timer1msPrevious;
@@ -145,71 +139,29 @@ int main (void){
         log_printf("Error: CAN initialization failed: %d\r\n", err);
         return 0;
     }
-    // err = CO_LSSinit(&pendingNodeId, &pendingBitRate);
-    // if(err != CO_ERROR_NO) {
-    //     log_printf("Error: LSS slave initialization failed: %d\r\n", err);
-    //     return 0;
-    // }
+
     err = CO_CANopenInit(activeNodeId);
     if(err != CO_ERROR_NO && err != CO_ERROR_NODE_ID_UNCONFIGURED_LSS) {
         log_printf("Error: CANopen initialization failed: %d\r\n", err);
         return 0;
     }
 
-    // // Need to start CAN module after setting filters
-    // if (HAL_CAN_Start(&CanHandle) != HAL_OK)
-    // {
-    //   /* Start Error */
-    //   Error_Handler();
-    // }
-
     // Reset timer just inscase the registers were not reset
-    HAL_TIM_Base_Stop_IT(&msTimer);
-    HAL_TIM_Base_DeInit(&msTimer);
-    
+    stopCOThreadTimer(&coThreadTimer);
 
-    //HAL_TIM_ConfigClockSource()
     /* Configure Timer interrupt function for execution every 1 millisecond */
     // Using timer 4
     // Timer 4 input clock is APB1
     // As of now APB1 is 32Mhz
-    // The Timer 4 clock input is multiplied by 2 so 64 Mhz.
-    __TIM4_CLK_ENABLE();
-    
+    // The Timer 4 clock input is multiplied by 2 so 64 Mhz.    
     // Input = 64 Mhz
-    // Interal divider = 1
-    // Prescaler = 64
-    // Clock rate = (Input)/(Interal divider * prescaler)
-    //            = (64 MHz)/(64) = 1 Mhz
+    configCOThreadTimer(&coThreadTimer,64,TIM_CLOCKDIVISION_DIV1);
 
-    // Prescaler and period need to be subtracted by 1 to count at the right rate
-    msTimer.Init.Prescaler = 64-1;
-    msTimer.Init.CounterMode = TIM_COUNTERMODE_UP;
-    msTimer.Init.Period = 1000-1;
-    msTimer.Init.AutoReloadPreload = 0;
-    msTimer.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-    msTimer.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
-
-    // Initalize timer device
-    HAL_TIM_Base_Init(&msTimer);
-
-    
-
-    // Enable interrupts for timer
-    HAL_TIM_Base_Start_IT(&msTimer);
-
-    /* Configure CAN transmit and receive interrupt */
-    // As of now we are not using interrupts
-
-    // /* Configure CANopen callbacks, etc */
-    // if(!CO->nodeIdUnconfigured) {
-
-    // }
+    // Start CO thread timer
+    startCOThreadTimer(&coThreadTimer);
 
     // Set up NMT call back function to print out messages when state has changed
     CO_NMT_initCallbackChanged(CO->NMT, NMT_Changed_Callback);
-
-    //CO_SYNC_initCallbackPre(CO->SYNC,NULL,printSync);
 
     /* start CAN */
     CO_CANsetNormalMode(CO->CANmodule[0]);
@@ -300,13 +252,6 @@ void tmrTask_thread(void){
           CO_errorReport(CO->em, CO_EM_ISR_TIMER_OVERFLOW, CO_EMC_SOFTWARE_INTERNAL, 0U);
       }
   }
-}
-
-
-/* CAN interrupt function executes on received CAN message ********************/
-void /* interrupt */ CO_CAN1InterruptHandler(void){
-  nmtChanged = true;
-    /* clear interrupt flag */
 }
 
 void NMT_Changed_Callback(CO_NMT_internalState_t state) {
@@ -429,18 +374,64 @@ static void Error_Handler(void){
   }
 }
 
-void TIM4_IRQHandler(void) {
-    HAL_TIM_IRQHandler(&msTimer);
-}
 
+// This function is called when any timer hits its period value
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
-    if(htim->Instance == TIM4) {
+    if(htim->Instance == coThreadTimer.Instance) {
+        // Run the next iteration of the CO interrupt
         tmrTask_thread();
     }
 }
 
-void printSync(void *object) {
-  //UART_putString(&debugUartHandle,"sync\r\n");
+// Configure a timer to run at a 1ms interrupt rate. The goal is to make the clock input 1MHz
+HAL_StatusTypeDef configCOThreadTimer(TIM_HandleTypeDef *timer, uint32_t abp2Clock, uint32_t inputDivider) {   
+
+    if(IS_TIM_CLOCKDIVISION_DIV(inputDivider) == false) {
+      return HAL_ERROR;
+    }
+
+    if(abp2Clock == 0) {
+      return HAL_ERROR;
+    }
+
+    // Input = 64 Mhz
+    // Interal divider = 1
+    // Prescaler = 64
+    // Clock rate = (Input)/(Interal divider * prescaler)
+    //            = (64 MHz)/(64) = 1 Mhz
+
+    uint32_t prescalar = abp2Clock / inputDivider;
+    if(prescalar < 0) {
+      return HAL_ERROR;
+    }
+
+    // Prescaler and period need to be subtracted by 1 to count at the right rate
+    timer->Init.Prescaler = prescalar-1;
+    timer->Init.CounterMode = TIM_COUNTERMODE_UP;
+    timer->Init.Period = 1000-1;
+    timer->Init.AutoReloadPreload = 0;
+    timer->Init.ClockDivision = inputDivider;
+    timer->Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
+
+    return HAL_OK;
+}
+
+// Stops the timer passed into it
+void stopCOThreadTimer(TIM_HandleTypeDef *timer) {
+  // Stop timer
+  HAL_TIM_Base_Stop_IT(timer);
+
+  // Prevent interrupts from firing
+  HAL_TIM_Base_DeInit(timer);
+}
+
+// Starts the timer passed into it
+void startCOThreadTimer(TIM_HandleTypeDef *timer) {
+  // Initalize timer device
+  HAL_TIM_Base_Init(timer);
+
+  // Enable interrupts for timer
+  HAL_TIM_Base_Start_IT(timer);
 }
 
 void systemSoftwareReset() {

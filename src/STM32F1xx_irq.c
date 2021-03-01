@@ -30,6 +30,7 @@
 /* Private variables ---------------------------------------------------------*/
 /* CAN handler declared in "main.c" file */
 extern CAN_HandleTypeDef CanHandle;
+extern TIM_HandleTypeDef coThreadTimer;
 
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
@@ -164,5 +165,9 @@ void CAN1_RX1_IRQHandler(void)
 void CAN1_TX_IRQHandler(void)
 {
   HAL_CAN_IRQHandler(&CanHandle);
+}
+
+void TIM4_IRQHandler(void) {
+    HAL_TIM_IRQHandler(&coThreadTimer);
 }
 
