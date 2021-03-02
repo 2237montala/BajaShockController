@@ -27,9 +27,9 @@
 
 #include "targetSpecific.h"
 #include "targetCommon.h"
-//#include "config.h"
+#include "config.h"
 #include "Uart.h"
-//#include "DataCollection.h"
+#include "DataCollection.h"
 #include "stdio.h"
 #include "stdbool.h"
 #include "CANopen.h"
@@ -55,9 +55,7 @@ TIM_HandleTypeDef coThreadTimer = {.Instance = TIM4};
 bool nmtChanged = false;
 
 // LED values and pins
-#define GREEN_LED_PIN D8
-#define RED_LED_PIN D9
-#define DEBUG_GPIO_PIN D4
+
 volatile uint32_t ledBlinkRate = 1000;
 
 /* Local function definitons */
@@ -89,7 +87,7 @@ int setup(void) {
     /* Configure the system clock to 64 MHz */
     SystemClock_Config();
 
-    setupDebugUart(&debugUartHandle,debugUartBaudRate);
+    setupDebugUart(&debugUartHandle,DEBUG_UART_BAUD_RATE);
 
 
     /* Initialize BSP Led for LED2 */
@@ -109,8 +107,6 @@ int main (void){
   CO_NMT_reset_cmd_t reset = CO_RESET_NOT;
   uint32_t heapMemoryUsed;
   void *CANmoduleAddress = &CanHandle; /* CAN module address */
-  uint8_t activeNodeId = 0x20; /* Copied from CO_pendingNodeId in the communication reset section */
-  uint16_t pendingBitRate = 1000;  /* read from dip switches or nonvolatile memory, configurable by LSS slave */
 
   /* Configure microcontroller. */
   setup();
@@ -122,7 +118,7 @@ int main (void){
       return 0;
   }
   else {
-      log_printf("Allocated %d bytes for CANopen objects\r\n", heapMemoryUsed);
+      log_printf("Allocated %lu bytes for CANopen objects\r\n", heapMemoryUsed);
   }
 
   while(reset != CO_RESET_APP){
@@ -134,13 +130,13 @@ int main (void){
     /* disable CAN and CAN interrupts */
 
     /* initialize CANopen */
-    err = CO_CANinit(CANmoduleAddress, pendingBitRate);
+    err = CO_CANinit(CANmoduleAddress, CAN_BAUD_RATE);
     if (err != CO_ERROR_NO) {
         log_printf("Error: CAN initialization failed: %d\r\n", err);
         return 0;
     }
 
-    err = CO_CANopenInit(activeNodeId);
+    err = CO_CANopenInit(NODE_ID);
     if(err != CO_ERROR_NO && err != CO_ERROR_NODE_ID_UNCONFIGURED_LSS) {
         log_printf("Error: CANopen initialization failed: %d\r\n", err);
         return 0;
@@ -173,6 +169,8 @@ int main (void){
     fflush(stdout);
 
     uint32_t lastLedBlinkTime = HAL_GetTick();
+    uint32_t lastDataCollectTime = 0;
+    uint32_t loopMsValue = 0;
 
     while(reset == CO_RESET_NOT){
 /* loop for normal program execution ******************************************/
@@ -183,6 +181,8 @@ int main (void){
         timer1msCopy = CO_timer1ms;
         timer1msDiff = timer1msCopy - timer1msPrevious;
         timer1msPrevious = timer1msCopy;
+
+        loopMsValue = HAL_GetTick();
 
 
         /* CANopen process */
@@ -200,9 +200,15 @@ int main (void){
         BspGpioWrite(RED_LED_PIN,LED_red);
 
         /* Nonblocking application code may go here. */
-        if(HAL_GetTick() - lastLedBlinkTime > ledBlinkRate) {
+        if(loopMsValue - lastLedBlinkTime > ledBlinkRate) {
           lastLedBlinkTime = HAL_GetTick();
           BSP_LED_Toggle(LED2);
+        }
+
+        // Collect new sensor data if we passed our interval
+        if(loopMsValue - lastDataCollectTime > DATA_COLLECTION_RATE) {
+          lastDataCollectTime = HAL_GetTick();
+          collectData();
         }
         /* Process EEPROM */
 
@@ -344,7 +350,7 @@ void SystemClock_Config(void){
 static void setupDebugUart(UART_HandleTypeDef *huart, uint32_t buadRate) {
   debugUartHandle.Instance        = USARTx;
 
-  debugUartHandle.Init.BaudRate   = debugUartBaudRate;
+  debugUartHandle.Init.BaudRate   = buadRate;
   debugUartHandle.Init.WordLength = UART_WORDLENGTH_8B;
   debugUartHandle.Init.StopBits   = UART_STOPBITS_1;
   debugUartHandle.Init.Parity     = UART_PARITY_NONE;
@@ -444,4 +450,14 @@ void HAL_CAN_ErrorCallback(CAN_HandleTypeDef *hcan){
     assert_param(hcan);
   }
   printf("CAN error: 0x%lx\r\n",hcan->ErrorCode);
+}
+
+// Since CanOpen uses the object dictionary for sending data we need to update the
+// internal arrays. Calling this function will set the CANOpen TDPO data structures
+// equal to the newest filtered sensor data
+void setSensorDataToCoTdpoData() {
+
+  // Copy accelerations over
+  memcpy(OD_readShockAccel,sensorDataBuffer[0].accels,(sizeof(REAL32) * ODL_readShockAccel_arrayLength));
+
 }
