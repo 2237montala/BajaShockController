@@ -69,6 +69,7 @@ void systemSoftwareReset();
 HAL_StatusTypeDef configCOThreadTimer(TIM_HandleTypeDef *timer, uint32_t abp2Clock, uint32_t inputDivider);
 void stopCOThreadTimer(TIM_HandleTypeDef *timer);
 void startCOThreadTimer(TIM_HandleTypeDef *timer);
+void setSensorDataToCoTdpoData();
 
 /* setup **********************************************************************/
 int setup(void) {
@@ -209,6 +210,7 @@ int main (void){
         if(loopMsValue - lastDataCollectTime > DATA_COLLECTION_RATE) {
           lastDataCollectTime = HAL_GetTick();
           collectData();
+          setSensorDataToCoTdpoData();
         }
         /* Process EEPROM */
 
