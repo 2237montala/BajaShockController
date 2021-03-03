@@ -34,7 +34,6 @@
 #include "stdbool.h"
 #include "CANopen.h"
 
-
 #define TMR_TASK_INTERVAL   (1000)          /* Interval of tmrTask thread in microseconds */
 #define INCREMENT_1MS(var)  (var++)         /* Increment 1ms variable in tmrTask */
 
@@ -59,7 +58,7 @@ bool nmtChanged = false;
 volatile uint32_t ledBlinkRate = 1000;
 
 /* Local function definitons */
-int setup(void);
+int setupMicro(void);
 void SystemClock_Config(void);
 static void Error_Handler(void);
 static void setupDebugUart(UART_HandleTypeDef *huart, uint32_t buadRate);
@@ -72,7 +71,7 @@ void startCOThreadTimer(TIM_HandleTypeDef *timer);
 void setSensorDataToCoTdpoData();
 
 /* setup **********************************************************************/
-int setup(void) {
+int setupMicro(void) {
     /* STM32F103xB HAL library initialization:
         - Configure the Flash prefetch
         - Systick timer is configured by default as source of time base, but user 
@@ -110,7 +109,7 @@ int main (void){
   void *CANmoduleAddress = &CanHandle; /* CAN module address */
 
   /* Configure microcontroller. */
-  setup();
+  setupMicro();
 
   /* Allocate memory but these are statically allocated so no malloc */
   err = CO_new(&heapMemoryUsed);
@@ -210,7 +209,6 @@ int main (void){
         if(loopMsValue - lastDataCollectTime > DATA_COLLECTION_RATE) {
           lastDataCollectTime = HAL_GetTick();
           collectData();
-          setSensorDataToCoTdpoData();
         }
         /* Process EEPROM */
 
@@ -239,7 +237,7 @@ int main (void){
 
 /* timer thread executes in constant intervals ********************************/
 void tmrTask_thread(void){
-  BspGpioToggle(DEBUG_GPIO_PIN);
+  BspGpioWrite(DEBUG_GPIO_PIN,1);
   INCREMENT_1MS(CO_timer1ms);
   if(CO->CANmodule[0]->CANnormal) {
       bool_t syncWas;
@@ -251,6 +249,12 @@ void tmrTask_thread(void){
       CO_process_RPDO(CO, syncWas);
 
       /* Further I/O or nonblocking application code may go here. */
+      // If we got a sync then our implementation means we are sending the data
+      // tpdos now so filter them and update the object directory
+      if(syncWas) {
+        filterData();
+        setSensorDataToCoTdpoData();
+      }
 
       /* Write outputs */
       CO_process_TPDO(CO, syncWas, TMR_TASK_INTERVAL, NULL);
@@ -260,6 +264,7 @@ void tmrTask_thread(void){
           CO_errorReport(CO->em, CO_EM_ISR_TIMER_OVERFLOW, CO_EMC_SOFTWARE_INTERNAL, 0U);
       }
   }
+  BspGpioWrite(DEBUG_GPIO_PIN,0);
 }
 
 void NMT_Changed_Callback(CO_NMT_internalState_t state) {
@@ -460,6 +465,6 @@ void HAL_CAN_ErrorCallback(CAN_HandleTypeDef *hcan){
 void setSensorDataToCoTdpoData() {
 
   // Copy accelerations over
-  memcpy(OD_readShockAccel,sensorDataBuffer[0].accels,(sizeof(REAL32) * ODL_readShockAccel_arrayLength));
+  memcpy(OD_readShockAccel,getMostRecentFilteredSensorData()->accels,(sizeof(REAL32) * ODL_readShockAccel_arrayLength));
 
 }

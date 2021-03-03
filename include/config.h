@@ -24,7 +24,10 @@
 // This value is in milliseconds
 #define DATA_COLLECTION_RATE 1
 
-#define DATA_BUFFER_LEN 5
+// Sets how long the buffer will be for averaging samples
+// This should also be larger than the data request rate
+// This should be a multiple of 2
+#define DATA_BUFFER_LEN 32
 #endif
 
 // CANOpen Settings -------------------------------------------------------------------------------

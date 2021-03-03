@@ -2,14 +2,26 @@
 
 float32_t tempData;
 
+// Create a local structure to hold the newest raw data sample
 struct ShockSensorRawData newDataSample;
+
+ShockSensorDataStruct newConvertedDataSample;
+
+ShockSensorDataStruct lastestFilteredData;
+
+// Create a fifo for holding the data
+_fff_declare(ShockSensorDataStruct,ShockSenorDataFifo,DATA_BUFFER_LEN);
 
 void initializeCollectData() {
 
     // Zero out all the data structures
     memset(sensorDataBuffer,0x0,sizeof(sensorDataBuffer));
     memset(&newDataSample,0x0,sizeof(newDataSample));
+    memset(&newConvertedDataSample,0x0,sizeof(newConvertedDataSample));
+    memset(&lastestFilteredData,0x0,sizeof(lastestFilteredData));
 
+    // Initialize the fifo
+    _fff_init(ShockSenorDataFifo);
 }
 
 /*
@@ -53,7 +65,13 @@ bool collectData() {
         return false;
     }
 
-    // Filter the data
+    // If fifo is full then pop off an element
+    if(_fff_is_full(ShockSenorDataFifo)) {
+        _fff_remove(ShockSenorDataFifo,1);
+    }
+
+    // Add new sample to the fifo
+    _fff_write_lite(ShockSenorDataFifo,newConvertedDataSample);
     
     return true;
 }
@@ -78,5 +96,23 @@ float convertGsToAccel(uint32_t g) {
     return (float32_t) g;
 }
 
-float filterData(float data);
+void filterData() {
+    // Simple running average over all the fifo
+    for(int i = 0; i < DATA_BUFFER_LEN; i++) {
+        // Sum accels
+        for(int q = 0; q < NUMBER_OF_AXIS; q++) {
+            lastestFilteredData.accels[q] += _fff_peek(ShockSenorDataFifo,i).accels[q]; 
+        }
 
+        // Sum linear position
+        lastestFilteredData.linearPos += _fff_peek(ShockSenorDataFifo,i).linearPos;
+    }
+}
+
+ShockSensorDataStruct* getMostRecentSensorData() {
+    return &(_fff_peek(ShockSenorDataFifo,0));
+}
+
+ShockSensorDataStruct* getMostRecentFilteredSensorData() {
+    return &lastestFilteredData;
+}

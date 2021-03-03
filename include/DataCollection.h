@@ -8,6 +8,7 @@
 
 #include "config.h"
 #include "stdbool.h"
+#include "fifofast.h"
 
 #define NUMBER_OF_AXIS 3
 #define X_INDEX 0
@@ -21,12 +22,13 @@ struct ShockSensorRawData {
 };
 
 // Sensor Structure
-struct ShockSensorData {
+// This needs to be typedef'd for use in the fifo
+typedef struct {
     float32_t accels[NUMBER_OF_AXIS];
     float32_t linearPos;
-};
+} ShockSensorDataStruct;
 
-struct ShockSensorData sensorDataBuffer[DATA_BUFFER_LEN];
+ShockSensorDataStruct sensorDataBuffer[DATA_BUFFER_LEN];
 
 bool collectRawData(void);
 
@@ -40,7 +42,9 @@ struct ShockSensorData convertRawShockData(struct ShockSensorRawData rawDataStru
 
 float convertGsToAccel(uint32_t g);
 
-struct ShockSensorData filterShockSensorData(struct ShockSensorData dataStruct);
+void filterData(void);
 
-float filterData(float data);
+ShockSensorDataStruct* getMostRecentSensorData();
+
+ShockSensorDataStruct* getMostRecentFilteredSensorData();
 
