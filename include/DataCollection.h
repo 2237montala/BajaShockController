@@ -23,12 +23,12 @@ struct ShockSensorRawData {
 
 // Sensor Structure
 // This needs to be typedef'd for use in the fifo
-typedef struct {
+typedef struct ShockSensorData{
     float32_t accels[NUMBER_OF_AXIS];
     float32_t linearPos;
 } ShockSensorDataStruct;
 
-ShockSensorDataStruct sensorDataBuffer[DATA_BUFFER_LEN];
+//ShockSensorDataStruct sensorDataBuffer[DATA_BUFFER_LEN];
 
 bool collectRawData(void);
 
