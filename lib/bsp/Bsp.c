@@ -175,7 +175,10 @@ void BspGpioInit(enum ArduinoDigitalPins digitalPin, enum GpioPinMode direction)
   }
 
   switch(direction) {
+    // Fall through for any Input type
     case INPUT:
+    case INPUT_PULLUP:
+    case INPUT_PULLDOWN:
       BspGpioInitInput(digitalPin, direction);
       break;
     case OUTPUT:
@@ -237,7 +240,7 @@ void BspGpioInitInput(enum ArduinoDigitalPins digitalPin,  enum GpioPinMode dire
     gpioinitstruct.Pull = GPIO_NOPULL;
   }
   
-    HAL_GPIO_Init(GPIO_PORT_Dx[digitalPin], &gpioinitstruct);
+  HAL_GPIO_Init(GPIO_PORT_Dx[digitalPin], &gpioinitstruct);
 }
 
 void BspGpioDeinit(enum ArduinoDigitalPins digitalPin) {
