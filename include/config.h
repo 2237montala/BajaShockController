@@ -31,7 +31,12 @@
 #endif
 
 // CANOpen Settings -------------------------------------------------------------------------------
-#define NODE_ID 0x20
+// The base Node ID must be lower than 0x7F. The lower the number the higher it's priority on the 
+// CAN bus.
+#define NODE_ID_BASE 0x20
+#define NODE_ID_BIT_ONE_PIN D5
+#define NODE_ID_BIT_TWO_PIN D6
+
 
 // Baud rate in bps
 #define CAN_BAUD_RATE 1000

@@ -95,11 +95,24 @@ int setupMicro(void) {
     BspGpioInitOutput(GREEN_LED_PIN);
     BspGpioInitOutput(RED_LED_PIN);
     BspGpioInitOutput(DEBUG_GPIO_PIN);
+    BspGpioInit(NODE_ID_BIT_ONE_PIN,INPUT_PULLUP);
+    BspGpioInit(NODE_ID_BIT_TWO_PIN,INPUT_PULLUP);
     
 
     return 0;
 }
 
+uint8_t setupNodeId() {
+  uint8_t tempNodeId = NODE_ID_BASE;
+  // Read the pins for their bit status
+  if(BspGpioRead(NODE_ID_BIT_ONE_PIN) == GPIO_PIN_SET) {
+    tempNodeId += 0x1;
+  }
+  if(BspGpioRead(NODE_ID_BIT_TWO_PIN) == GPIO_PIN_SET) {
+    tempNodeId += 0x2;
+  }
+  return tempNodeId;
+}
 
 /* main ***********************************************************************/
 int main (void){
@@ -107,9 +120,14 @@ int main (void){
   CO_NMT_reset_cmd_t reset = CO_RESET_NOT;
   uint32_t heapMemoryUsed;
   void *CANmoduleAddress = &CanHandle; /* CAN module address */
+  uint8_t currNodeId = 0;
 
   /* Configure microcontroller. */
   setupMicro();
+
+  // Calculate the node's CAN id based on on the dip switch position
+  // Connect to ground is a 0
+  currNodeId = setupNodeId();
 
   /* Allocate memory but these are statically allocated so no malloc */
   err = CO_new(&heapMemoryUsed);
@@ -136,7 +154,7 @@ int main (void){
         return 0;
     }
 
-    err = CO_CANopenInit(NODE_ID);
+    err = CO_CANopenInit(currNodeId);
     if(err != CO_ERROR_NO && err != CO_ERROR_NODE_ID_UNCONFIGURED_LSS) {
         log_printf("Error: CANopen initialization failed: %d\r\n", err);
         return 0;
