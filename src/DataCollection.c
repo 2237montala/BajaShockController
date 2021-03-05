@@ -15,7 +15,7 @@ _fff_declare(ShockSensorDataStruct,ShockSenorDataFifo,DATA_BUFFER_LEN);
 void initializeCollectData() {
 
     // Zero out all the data structures
-    memset(sensorDataBuffer,0x0,sizeof(sensorDataBuffer));
+    //memset(sensorDataBuffer,0x0,sizeof(sensorDataBuffer));
     memset(&newDataSample,0x0,sizeof(newDataSample));
     memset(&newConvertedDataSample,0x0,sizeof(newConvertedDataSample));
     memset(&lastestFilteredData,0x0,sizeof(lastestFilteredData));
@@ -54,13 +54,13 @@ bool collectData() {
     }
 
     // Convert g values to accel
-    succeed = convertShockGsToAccel(sensorDataBuffer[0].accels,NUMBER_OF_AXIS);
+    succeed = convertShockGsToAccel(newConvertedDataSample.accels,NUMBER_OF_AXIS);
     if(!succeed) {
         return false;
     }
 
     // Convert linear enocder ticks to new position
-    succeed = convertShockTicksToPosition(&(sensorDataBuffer[0].linearPos));
+    succeed = convertShockTicksToPosition(&(newConvertedDataSample.linearPos));
     if(!succeed) {
         return false;
     }
@@ -78,7 +78,7 @@ bool collectData() {
 
 // Takes in the location to save the converted raw sensor data
 bool convertShockGsToAccel(float32_t *accelArray, uint32_t numberOfAxis) {
-    if(numberOfAxis < NUMBER_OF_AXIS) {
+    if(numberOfAxis <= NUMBER_OF_AXIS) {
         for(int i = 0; i < numberOfAxis; i++) {
             accelArray[i] = convertGsToAccel(newDataSample.gs[i]);
         }

@@ -47,7 +47,6 @@ uint8_t LED_red, LED_green;
 
 /* UART handler declaration */
 UART_HandleTypeDef debugUartHandle;
-const uint32_t debugUartBaudRate = 115200;
 
 CAN_HandleTypeDef     CanHandle;
 TIM_HandleTypeDef coThreadTimer = {.Instance = TIM4};
@@ -96,6 +95,8 @@ int setupMicro(void) {
     BspGpioInitOutput(RED_LED_PIN);
     BspGpioInitOutput(DEBUG_GPIO_PIN);
     
+    BspGpioWrite(LED2,1);
+    BspGpioWrite(GREEN_LED_PIN,1);
 
     return 0;
 }
@@ -118,7 +119,7 @@ int main (void){
       return 0;
   }
   else {
-      log_printf("Allocated %lu bytes for CANopen objects\r\n", heapMemoryUsed);
+      log_printf("Allocated %d bytes for CANopen objects\r\n", heapMemoryUsed);
   }
 
   while(reset != CO_RESET_APP){
@@ -142,6 +143,8 @@ int main (void){
         return 0;
     }
 
+    printf("Starting with node id: 0x%x\r\n",NODE_ID);
+
     // Reset timer just inscase the registers were not reset
     stopCOThreadTimer(&coThreadTimer);
 
@@ -151,7 +154,9 @@ int main (void){
     // As of now APB1 is 32Mhz
     // The Timer 4 clock input is multiplied by 2 so 64 Mhz.    
     // Input = 64 Mhz
-    configCOThreadTimer(&coThreadTimer,64,TIM_CLOCKDIVISION_DIV1);
+    if(configCOThreadTimer(&coThreadTimer,64,TIM_CLOCKDIVISION_DIV1) == HAL_ERROR) {
+      Error_Handler();
+    };
 
     // Start CO thread timer
     startCOThreadTimer(&coThreadTimer);
@@ -171,6 +176,7 @@ int main (void){
     uint32_t lastLedBlinkTime = HAL_GetTick();
     uint32_t lastDataCollectTime = 0;
     uint32_t loopMsValue = 0;
+    uint32_t oldError = CanHandle.Instance->ESR;
 
     while(reset == CO_RESET_NOT){
 /* loop for normal program execution ******************************************/
@@ -210,8 +216,7 @@ int main (void){
           lastDataCollectTime = HAL_GetTick();
           collectData();
         }
-        /* Process EEPROM */
-
+        
         /* optional sleep for short time */
     }
   }
@@ -352,6 +357,9 @@ void SystemClock_Config(void){
     /* Initialization Error */
     while(1); 
   }
+
+  /* Output clock on MCO1 pin(PA8) for debugging purpose */
+  HAL_RCC_MCOConfig(RCC_MCO, RCC_MCO1SOURCE_HSI, RCC_MCODIV_1);
 }
 
 static void setupDebugUart(UART_HandleTypeDef *huart, uint32_t buadRate) {
@@ -398,7 +406,6 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 
 // Configure a timer to run at a 1ms interrupt rate. The goal is to make the clock input 1MHz
 HAL_StatusTypeDef configCOThreadTimer(TIM_HandleTypeDef *timer, uint32_t abp2Clock, uint32_t inputDivider) {   
-
     if(IS_TIM_CLOCKDIVISION_DIV(inputDivider) == false) {
       return HAL_ERROR;
     }
@@ -406,6 +413,24 @@ HAL_StatusTypeDef configCOThreadTimer(TIM_HandleTypeDef *timer, uint32_t abp2Clo
     if(abp2Clock == 0) {
       return HAL_ERROR;
     }
+
+    // Convert input divider to its numerical representation
+    switch ((inputDivider))
+    {
+    case TIM_CLOCKDIVISION_DIV1:
+      inputDivider = 1;
+      break;
+    case TIM_CLOCKDIVISION_DIV2:
+      inputDivider = 2;
+      break;
+    case TIM_CLOCKDIVISION_DIV4:
+      inputDivider = 4;
+      break;
+    default:
+      inputDivider = 1;
+      break;
+    }
+
 
     // Input = 64 Mhz
     // Interal divider = 1
@@ -452,10 +477,8 @@ void systemSoftwareReset() {
 }
 
 void HAL_CAN_ErrorCallback(CAN_HandleTypeDef *hcan){
-  if(hcan->ErrorCode >= HAL_CAN_ERROR_BOF)
-  {
-    assert_param(hcan);
-  }
+  printf("CAN TEC Error: %lu\r\n",(hcan->Instance->ESR & CAN_ESR_TEC_Msk) >> CAN_ESR_TEC_Pos);
+  printf("CAN REC Error: %lu\r\n",(hcan->Instance->ESR & CAN_ESR_REC_Msk) >> CAN_ESR_REC_Pos);
   printf("CAN error: 0x%lx\r\n",hcan->ErrorCode);
 }
 

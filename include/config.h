@@ -31,10 +31,11 @@
 #endif
 
 // CANOpen Settings -------------------------------------------------------------------------------
-#define NODE_ID 0x20
+//#define NODE_ID 0x20
+#define NODE_ID 0x21
 
 // Baud rate in bps
-#define CAN_BAUD_RATE 1000
+#define CAN_BAUD_RATE 500
 
 // Arduino Digital Pin names for the status indicators
 #define GREEN_LED_PIN D8

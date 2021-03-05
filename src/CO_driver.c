@@ -111,7 +111,7 @@ void CO_CANsetNormalMode(CO_CANmodule_t *CANmodule){
         if(HAL_CAN_Start(CANmodule->CANptr) == HAL_OK) {
             if(HAL_CAN_ActivateNotification(CanHandle,
                 CAN_IT_RX_FIFO0_MSG_PENDING | CAN_IT_RX_FIFO1_MSG_PENDING | CAN_IT_TX_MAILBOX_EMPTY |
-                CAN_IT_ERROR | CAN_IT_BUSOFF | CAN_IT_LAST_ERROR_CODE | CAN_IT_ERROR_PASSIVE | CAN_IT_ERROR_WARNING)
+                CAN_IT_ERROR | CAN_IT_BUSOFF | CAN_IT_LAST_ERROR_CODE | CAN_IT_ERROR_WARNING)
                 != HAL_OK) {
                 /* Notification Error */
                 CANmodule->errinfo = CO_ERROR_TIMEOUT;
