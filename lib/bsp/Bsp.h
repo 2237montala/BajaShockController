@@ -60,6 +60,13 @@
    
 //-----------------------------------------------------------------------------
 // Low level GPIO constants
+enum GpioPinMode {
+  INPUT,
+  INPUT_PULLUP,
+  INPUT_PULLDOWN,
+  OUTPUT
+};
+
 // Arduino pin constants
 enum ArduinoDigitalPins {
   D13 = 0,
@@ -114,13 +121,19 @@ enum ArduinoDigitalPins {
 #define Dx_GPIOD_CLK_ENABLE()                 __HAL_RCC_GPIOD_CLK_ENABLE()
 #define Dx_GPIOD_CLK_DISABLE()                __HAL_RCC_GPIOD_CLK_DISABLE()  
 
+void BspGpioInit(enum ArduinoDigitalPins digitalPin, enum GpioPinMode direction);
+
 void BspGpioInitOutput(enum ArduinoDigitalPins digitalPin);
+
+void BspGpioInitInput(enum ArduinoDigitalPins digitalPin, enum GpioPinMode direction);
 
 void BspGpioDeinit(enum ArduinoDigitalPins digitalPin); 
 
 void BspGpioWrite(enum ArduinoDigitalPins digitalPin, uint8_t outputHigh);
 
 void BspGpioToggle(enum ArduinoDigitalPins digitalPin);
+
+GPIO_PinState BspGpioRead(enum ArduinoDigitalPins digitalPin);
 
 typedef enum 
 {
