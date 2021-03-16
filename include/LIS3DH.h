@@ -1,6 +1,7 @@
 #pragma once
 #include "targetSpecific.h"
 #include <stdbool.h>
+#include "I2C.h"
 
 /*
  * HEADER NAME : LIS3DH.h
@@ -315,10 +316,16 @@ typedef enum {
   LIS3DH_DATARATE_POWERDOWN = 0,
   LIS3DH_DATARATE_LOWPOWER_1K6HZ = 0b1000,
   LIS3DH_DATARATE_LOWPOWER_5KHZ = 0b1001,
-
 } lis3dh_dataRate_t;
+#define LIS3DH_DATA_RATE_POS 4
+#define LIS3DH_DATA_RATE_MASK (0xF << LIS3DH_DATA_RATE_POS)
 
-bool begin(I2C_HandleTypeDef *newI2CHandle,  uint8_t addr, uint8_t nWAI);
+typedef enum {
+  LIS3DH_LOW_POWER_MODE = 0b0000,
+  LIS3DH_NORMAL_MODE = 0b1000
+} lis3dh_powerMode_t;
+
+bool begin(uint8_t addr, uint8_t nWAI);
 
 uint8_t getDeviceID(void);
 bool haveNewData(void);
@@ -329,3 +336,5 @@ int16_t readADC(uint8_t a);
 
 void setRange(lis3dh_range_t range);
 lis3dh_range_t getRange(void);
+
+bool Lis3dhSetDataRate(lis3dh_dataRate_t dataRate);

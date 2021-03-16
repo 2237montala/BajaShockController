@@ -14,18 +14,28 @@
 enum RequestType {ADDRBIT8_HIGH_TOREAD, 
                   ADDRBIT8_HIGH_TOWRITE};
 
+#define I2C_OPERATION_TIMEOUT 100
 
-bool I2cInit();
+bool I2cInit(HAL_I2C_ModeTypeDef I2cType, uint8_t i2cAddress);
 
-bool I2cBegin();
+bool I2cIsReady(void);
+
+bool I2cIsDeviceReady(uint8_t deviceID);
+
+bool I2cRead(uint8_t deviceID, uint8_t *buffer, uint8_t len);
+bool I2cReadByte(uint8_t deviceID, uint8_t *value);
+bool I2cReadTwoBytes(uint8_t deviceID, uint16_t *value);
+
+bool I2cWriteByte(uint8_t deviceID, uint8_t data);
+bool I2cWriteTwoBytes(uint8_t deviceID, uint16_t data);
+bool I2cWrite(uint8_t deviceID, uint8_t *buffer, uint8_t len);
+
+bool I2cWriteThenReadTwoBytes(uint8_t deviceID, uint16_t deviceRegAddr, uint16_t *value);
+bool I2cWriteThenReadByte(uint8_t deviceID, uint16_t deviceRegAddr,uint8_t *value);
 
 
-bool read(uint8_t *buffer, uint8_t len);
-bool read(uint8_t *value);
-bool read(uint16_t *value);
-uint32_t read(void);
-uint32_t readCached(void);
-bool write(uint8_t *buffer, uint8_t len);
-bool write(uint32_t value, uint8_t numbytes = 0);
+bool I2cWriteThenRead(uint8_t deviceID, uint16_t deviceRegAddr, uint8_t *buffer, uint8_t len);
+
+
 
 uint8_t width(void);
