@@ -226,6 +226,12 @@ void HAL_I2C_MspInit(I2C_HandleTypeDef *hi2c)
   /* Enable I2Cx clock */
   I2Cx_CLK_ENABLE(); 
 
+  // Enable clock on alternate function I2C pins
+  __HAL_RCC_AFIO_CLK_ENABLE();
+
+  // Remap the default I2C1 pins to pb8 and pb9
+  __HAL_AFIO_REMAP_I2C1_ENABLE();
+
   /*##-2- Configure peripheral GPIO ##########################################*/  
   /* I2C TX GPIO pin configuration  */
   GPIO_InitStruct.Pin       = I2Cx_SCL_PIN;

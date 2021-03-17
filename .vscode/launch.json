@@ -1,5 +1,5 @@
 // AUTOMATICALLY GENERATED FILE. PLEASE DO NOT MODIFY IT MANUALLY
-
+//
 // PIO Unified Debugger
 //
 // Documentation: https://docs.platformio.org/page/plus/debugging.html
@@ -12,25 +12,25 @@
             "type": "platformio-debug",
             "request": "launch",
             "name": "PIO Debug",
-            "executable": "c:/Users/antho/Documents/School Work/Baja/BajaCode/BajaShockController/.pio/build/nucleo_f103rb/firmware.elf",
+            "executable": "/home/anthony/Documents/Baja/BajaShockController/.pio/build/nucleo_f103rb/firmware.elf",
             "projectEnvName": "nucleo_f103rb",
-            "toolchainBinDir": "C:/Users/antho/.platformio/packages/toolchain-gccarmnoneeabi/bin",
-            "svdPath": "C:/Users/antho/.platformio/platforms/ststm32/misc/svd/STM32F103xx.svd",
+            "toolchainBinDir": "/home/anthony/.platformio/packages/toolchain-gccarmnoneeabi/bin",
+            "internalConsoleOptions": "openOnSessionStart",
+            "svdPath": "/home/anthony/.platformio/platforms/ststm32/misc/svd/STM32F103xx.svd",
             "preLaunchTask": {
                 "type": "PlatformIO",
                 "task": "Pre-Debug"
-            },
-            "internalConsoleOptions": "openOnSessionStart"
+            }
         },
         {
             "type": "platformio-debug",
             "request": "launch",
             "name": "PIO Debug (skip Pre-Debug)",
-            "executable": "c:/Users/antho/Documents/School Work/Baja/BajaCode/BajaShockController/.pio/build/nucleo_f103rb/firmware.elf",
+            "executable": "/home/anthony/Documents/Baja/BajaShockController/.pio/build/nucleo_f103rb/firmware.elf",
             "projectEnvName": "nucleo_f103rb",
-            "toolchainBinDir": "C:/Users/antho/.platformio/packages/toolchain-gccarmnoneeabi/bin",
-            "svdPath": "C:/Users/antho/.platformio/platforms/ststm32/misc/svd/STM32F103xx.svd",
-            "internalConsoleOptions": "openOnSessionStart"
+            "toolchainBinDir": "/home/anthony/.platformio/packages/toolchain-gccarmnoneeabi/bin",
+            "internalConsoleOptions": "openOnSessionStart",
+            "svdPath": "/home/anthony/.platformio/platforms/ststm32/misc/svd/STM32F103xx.svd"
         }
     ]
 }
