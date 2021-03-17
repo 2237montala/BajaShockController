@@ -4,7 +4,7 @@
 uint8_t i2cAddr;
 uint8_t wai;
 
-bool Lis3dhBegin(uint8_t addr, uint8_t nWAI) {
+bool Lis3dhInit(uint8_t addr, uint8_t nWAI) {
     // Save local versoin of constructer params
     i2cAddr = addr;
     wai = nWAI;
@@ -16,8 +16,10 @@ bool Lis3dhBegin(uint8_t addr, uint8_t nWAI) {
 
     // Send out addr to see if the sensor responds
     // Try 5 times before giving up
-
-    if(!I2cIsDeviceReady(addr)) {
+    bool status = I2cIsDeviceReady(addr);
+    if(status == false) {
+        int x = 0;
+        x += 1;
         return false;
     }
 
@@ -46,7 +48,7 @@ bool Lis3dhBegin(uint8_t addr, uint8_t nWAI) {
         return false;
     }
 
-    //
+    return true;
 }
 
 uint8_t getDeviceID(void) {

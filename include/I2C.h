@@ -16,7 +16,11 @@ enum RequestType {ADDRBIT8_HIGH_TOREAD,
 
 #define I2C_OPERATION_TIMEOUT 100
 
-bool I2cInit(HAL_I2C_ModeTypeDef I2cType, uint8_t i2cAddress);
+#define I2C_HIGH_SPEED 400000
+#define I2C_LOW_SPEED 100000
+
+bool I2cInit(I2C_TypeDef *instance, uint32_t i2cSpeed, uint32_t dutyCycleMode,
+             HAL_I2C_ModeTypeDef i2cType, uint8_t i2cAddress);
 
 bool I2cIsReady(void);
 
@@ -35,6 +39,8 @@ bool I2cWriteThenReadByte(uint8_t deviceID, uint16_t deviceRegAddr,uint8_t *valu
 
 
 bool I2cWriteThenRead(uint8_t deviceID, uint16_t deviceRegAddr, uint8_t *buffer, uint8_t len);
+
+uint32_t I2cGetError();
 
 
 

@@ -34,6 +34,10 @@
 #include "stdbool.h"
 #include "CANopen.h"
 
+// Includes for acclerometer
+#include "I2C.h"
+#include "LIS3DH.h"
+
 #define TMR_TASK_INTERVAL   (1000)          /* Interval of tmrTask thread in microseconds */
 #define INCREMENT_1MS(var)  (var++)         /* Increment 1ms variable in tmrTask */
 
@@ -100,6 +104,10 @@ int setupMicro(void) {
     BspGpioWrite(LED2,1);
     BspGpioWrite(GREEN_LED_PIN,1);
 
+    // Set up I2C
+    I2cInit(I2Cx,I2C_LOW_SPEED,I2C_DUTYCYCLE_2,HAL_I2C_MODE_MASTER,0x00);
+    HAL_Delay(50);
+
     return 0;
 }
 
@@ -125,6 +133,13 @@ int main (void){
 
   /* Configure microcontroller. */
   setupMicro();
+
+  // Set up sensors
+  bool temp = Lis3dhInit(LIS3DH_DEFAULT_ADDRESS,LIS3DH_DEFAULT_WAI);
+  printf("Error: %x\r\n",I2cGetError());
+  if(temp == false) {
+    Error_Handler();
+  }
 
   // Calculate the node's CAN id based on on the dip switch position
   // Connect to ground is a 0

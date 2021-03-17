@@ -16,6 +16,9 @@
 /** I2C ADDRESS/BITS **/
 #define LIS3DH_DEFAULT_ADDRESS (0x18) // if SDO/SA0 is 3V, its 0x19
 
+// Default who am i value that should be returned
+#define LIS3DH_DEFAULT_WAI 0x33
+
 /*!
  *  STATUS_REG_AUX register
  *   321OR  1, 2 and 3 axis data overrun. Default value: 0
@@ -325,7 +328,7 @@ typedef enum {
   LIS3DH_NORMAL_MODE = 0b1000
 } lis3dh_powerMode_t;
 
-bool begin(uint8_t addr, uint8_t nWAI);
+bool Lis3dhInit(uint8_t addr, uint8_t nWAI);
 
 uint8_t getDeviceID(void);
 bool haveNewData(void);

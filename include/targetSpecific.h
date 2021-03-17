@@ -38,7 +38,22 @@
 #define CANx_RELEASE_RESET()           __HAL_RCC_CAN1_RELEASE_RESET()
 
 /* Definition for CANx Pins */
-#define CANx_TX_PIN                    GPIO_PIN_9
-#define CANx_TX_GPIO_PORT              GPIOB
-#define CANx_RX_PIN                    GPIO_PIN_8
-#define CANx_RX_GPIO_PORT              GPIOB
+#define CANx_TX_PIN                    GPIO_PIN_12
+#define CANx_TX_GPIO_PORT              GPIOA
+#define CANx_RX_PIN                    GPIO_PIN_11
+#define CANx_RX_GPIO_PORT              GPIOA
+
+/* Definition for I2Cx clock resources */
+#define I2Cx                            I2C1
+#define I2Cx_CLK_ENABLE()               __HAL_RCC_I2C1_CLK_ENABLE()
+#define I2Cx_SDA_GPIO_CLK_ENABLE()      __HAL_RCC_GPIOB_CLK_ENABLE()
+#define I2Cx_SCL_GPIO_CLK_ENABLE()      __HAL_RCC_GPIOB_CLK_ENABLE() 
+
+#define I2Cx_FORCE_RESET()              __HAL_RCC_I2C1_FORCE_RESET()
+#define I2Cx_RELEASE_RESET()            __HAL_RCC_I2C1_RELEASE_RESET()
+
+/* Definition for I2Cx Pins */
+#define I2Cx_SCL_PIN                    GPIO_PIN_8
+#define I2Cx_SCL_GPIO_PORT              GPIOB
+#define I2Cx_SDA_PIN                    GPIO_PIN_9
+#define I2Cx_SDA_GPIO_PORT              GPIOB
