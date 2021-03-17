@@ -39,6 +39,13 @@ bool Lis3dhBegin(uint8_t addr, uint8_t nWAI) {
         return false;
     }
 
+    // Set high resolution mode and block update mode
+    data[0] = LIS3DH_REG_CTRL4;
+    data[1] =0x88;
+    if(!I2cWrite(addr,data,sizeof(data))) {
+        return false;
+    }
+
     //
 }
 
