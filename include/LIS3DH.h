@@ -299,6 +299,8 @@ typedef enum {
   LIS3DH_RANGE_4_G = 0b01,  // +/- 4g
   LIS3DH_RANGE_2_G = 0b00   // +/- 2g (default value)
 } lis3dh_range_t;
+#define LIS3DH_RANGE_POS 4
+#define LIS3DH_RANGE_MASK (0x3 << LIS3DH_RANGE_POS)
 
 /** A structure to represent axes **/
 typedef enum {
@@ -328,16 +330,26 @@ typedef enum {
   LIS3DH_NORMAL_MODE = 0b1000
 } lis3dh_powerMode_t;
 
+struct Lis3dhDataStruct {
+  uint32_t xRaw;
+  uint32_t yRaw;
+  uint32_t zRaw;
+  float xGs;
+  float yGs;
+  float zGs;
+  uint8_t isInFreefall;
+};
+
 bool Lis3dhInit(uint8_t addr, uint8_t nWAI);
 
-uint8_t getDeviceID(void);
+uint8_t Lis3dhGetDeviceID(void);
 bool haveNewData(void);
 bool enableDRDY(bool enable_drdy, uint8_t int_pin);
 
-void read(void);
+bool Lis3dhRead(struct Lis3dhDataStruct *dataSample);
 int16_t readADC(uint8_t a);
 
-void setRange(lis3dh_range_t range);
-lis3dh_range_t getRange(void);
+bool Lis3dhSetRange(lis3dh_range_t range);
+lis3dh_range_t Lis3dhGetRange(void);
 
 bool Lis3dhSetDataRate(lis3dh_dataRate_t dataRate);
