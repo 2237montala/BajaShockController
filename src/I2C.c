@@ -37,6 +37,18 @@ bool I2cInit(I2C_TypeDef *instance, uint32_t i2cSpeed, uint32_t dutyCycleMode,
         /* Initialization Error */
         return false;  
     }
+
+    // Need to enable master acknowledgement as it is not included in the HAL
+    // __HAL_I2C_DISABLE(&I2cHandle);
+
+    // MODIFY_REG((&I2cHandle)->Instance->CR1,I2C_CR1_ACK,I2C_CR1_ACK);
+
+    // __HAL_I2C_ENABLE(&I2cHandle);
+
+    //Reset DR register
+    (&I2cHandle)->Instance->DR = 0;
+    uint8_t temp = (&I2cHandle)->Instance->DR;
+
     return true;
 }
 
@@ -45,7 +57,7 @@ bool I2cIsReady(void) {
 }
 
 bool I2cIsDeviceReady(uint8_t deviceID) {
-    HAL_StatusTypeDef temp = HAL_I2C_IsDeviceReady(&I2cHandle,deviceID,100,I2C_OPERATION_TIMEOUT);
+    HAL_StatusTypeDef temp = HAL_I2C_IsDeviceReady(&I2cHandle,deviceID,5,I2C_OPERATION_TIMEOUT);
     return temp == HAL_OK;
 }
 
@@ -85,14 +97,14 @@ bool I2cWriteThenRead(uint8_t deviceID, uint16_t deviceRegAddr, uint8_t *buffer,
     if(buffer != NULL && len > 0)
     {
         // Request a device register read
-        bool hasError = I2cWriteTwoBytes(deviceID,deviceRegAddr);
+        bool success = I2cWriteByte(deviceID,deviceRegAddr);
 
         // Only continue if we didn't have an error
-        if(!hasError) {
+        if(success) {
             // Request data from the requested register
             return I2cRead(deviceID,buffer,len);
         } else {
-            return hasError;
+            return success;
         }
     } else
         return false;

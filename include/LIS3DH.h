@@ -304,10 +304,11 @@ typedef enum {
 
 /** A structure to represent axes **/
 typedef enum {
-  LIS3DH_AXIS_X = 0x0,
-  LIS3DH_AXIS_Y = 0x1,
-  LIS3DH_AXIS_Z = 0x2,
+  LIS3DH_AXIS_X = 0x1,
+  LIS3DH_AXIS_Y = 0x2,
+  LIS3DH_AXIS_Z = 0x4,
 } lis3dh_axis_t;
+#define LIS3DH_X_AXIS_ENABLE_POS 0
 
 /** Used with register 0x2A (LIS3DH_REG_CTRL_REG1) to set bandwidth **/
 typedef enum {
@@ -326,8 +327,8 @@ typedef enum {
 #define LIS3DH_DATA_RATE_MASK (0xF << LIS3DH_DATA_RATE_POS)
 
 typedef enum {
-  LIS3DH_LOW_POWER_MODE = 0b0000,
-  LIS3DH_NORMAL_MODE = 0b1000
+  LIS3DH_LOW_POWER_MODE = 0b1000,
+  LIS3DH_NORMAL_MODE = 0b0000
 } lis3dh_powerMode_t;
 
 struct Lis3dhDataStruct {
