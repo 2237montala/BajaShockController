@@ -105,7 +105,7 @@ int setupMicro(void) {
     BspGpioWrite(GREEN_LED_PIN,1);
 
     // Set up I2C
-    I2cInit(I2Cx,I2C_LOW_SPEED,I2C_DUTYCYCLE_2,HAL_I2C_MODE_MASTER,0x00);
+    I2cInit(I2Cx,I2C_HIGH_SPEED,I2C_DUTYCYCLE_2,HAL_I2C_MODE_MASTER,0x00);
     HAL_Delay(50);
 
     return 0;

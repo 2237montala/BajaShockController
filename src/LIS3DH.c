@@ -6,7 +6,9 @@ uint8_t wai;
 
 bool Lis3dhInit(uint8_t addr, uint8_t nWAI) {
     // Save local versoin of constructer params
-    i2cAddr = addr;
+    // Need to shift address over by 1 byte per the I2C standard
+    // LSB is used to hold whether we are reading (0) or writing (1)
+    i2cAddr = addr << 0;
     wai = nWAI;
 
     // Check if I2C device is ready to use
@@ -23,30 +25,30 @@ bool Lis3dhInit(uint8_t addr, uint8_t nWAI) {
         return false;
     }
 
-    // Get device ID
-    if(getDeviceID() != wai) {
-        // No LIS3DH connected
-        return false;
-    }
+    // // Get device ID
+    // if(getDeviceID() != wai) {
+    //     // No LIS3DH connected
+    //     return false;
+    // }
 
-    // Enable reading on all axes in normal mode
-    uint8_t regConfig = (LIS3DH_AXIS_X | LIS3DH_AXIS_Y | LIS3DH_AXIS_Z | LIS3DH_NORMAL_MODE);
-    uint8_t data[2] = {LIS3DH_REG_CTRL1,regConfig};
-    if(!I2cWrite(addr,data,sizeof(data))) {
-        return false;
-    }
+    // // Enable reading on all axes in normal mode
+    // uint8_t regConfig = (LIS3DH_AXIS_X | LIS3DH_AXIS_Y | LIS3DH_AXIS_Z | LIS3DH_NORMAL_MODE);
+    // uint8_t data[2] = {LIS3DH_REG_CTRL1,regConfig};
+    // if(!I2cWrite(addr,data,sizeof(data))) {
+    //     return false;
+    // }
 
-    // Set sampling rate
-    if(!Lis3dhSetDataRate(LIS3DH_DATARATE_LOWPOWER_5KHZ)) {
-        return false;
-    }
+    // // Set sampling rate
+    // if(!Lis3dhSetDataRate(LIS3DH_DATARATE_LOWPOWER_5KHZ)) {
+    //     return false;
+    // }
 
-    // Set high resolution mode and block update mode
-    data[0] = LIS3DH_REG_CTRL4;
-    data[1] =0x88;
-    if(!I2cWrite(addr,data,sizeof(data))) {
-        return false;
-    }
+    // // Set high resolution mode and block update mode
+    // data[0] = LIS3DH_REG_CTRL4;
+    // data[1] =0x88;
+    // if(!I2cWrite(addr,data,sizeof(data))) {
+    //     return false;
+    // }
 
     return true;
 }

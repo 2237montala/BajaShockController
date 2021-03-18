@@ -45,7 +45,8 @@ bool I2cIsReady(void) {
 }
 
 bool I2cIsDeviceReady(uint8_t deviceID) {
-    return HAL_I2C_IsDeviceReady(&I2cHandle,deviceID,5,I2C_OPERATION_TIMEOUT) == HAL_OK;
+    HAL_StatusTypeDef temp = HAL_I2C_IsDeviceReady(&I2cHandle,deviceID,100,I2C_OPERATION_TIMEOUT);
+    return temp == HAL_OK;
 }
 
 bool I2cRead(uint8_t deviceID, uint8_t *buffer, uint8_t len) {
