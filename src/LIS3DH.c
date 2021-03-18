@@ -24,37 +24,37 @@ bool Lis3dhInit(uint8_t addr, uint8_t nWAI) {
 
     // Send out addr to see if the sensor responds
     // Try 5 times before giving up
-    bool status = I2cIsDeviceReady(addr);
+    bool status = I2cIsDeviceReady(i2cAddr);
     if(status == false) {
         int x = 0;
         x += 1;
         return false;
     }
 
-    // // Get device ID
-    // if(Lis3dhGetDeviceID() != wai) {
-    //     // No LIS3DH connected
-    //     return false;
-    // }
+    // Get device ID
+    if(Lis3dhGetDeviceID() != wai) {
+        // No LIS3DH connected
+        return false;
+    }
 
-    // // Enable reading on all axes in normal mode
-    // uint8_t regConfig = (LIS3DH_AXIS_X | LIS3DH_AXIS_Y | LIS3DH_AXIS_Z | LIS3DH_NORMAL_MODE);
-    // uint8_t data[2] = {LIS3DH_REG_CTRL1,regConfig};
-    // if(!I2cWrite(addr,data,sizeof(data))) {
-    //     return false;
-    // }
+    // Enable reading on all axes in normal mode
+    uint8_t regConfig = (LIS3DH_AXIS_X | LIS3DH_AXIS_Y | LIS3DH_AXIS_Z | LIS3DH_NORMAL_MODE);
+    uint8_t data[2] = {LIS3DH_REG_CTRL1,regConfig};
+    if(!I2cWrite(i2cAddr,data,sizeof(data))) {
+        return false;
+    }
 
-    // // Set sampling rate
-    // if(!Lis3dhSetDataRate(LIS3DH_DATARATE_LOWPOWER_5KHZ)) {
-    //     return false;
-    // }
+    // Set sampling rate
+    if(!Lis3dhSetDataRate(LIS3DH_DATARATE_LOWPOWER_5KHZ)) {
+        return false;
+    }
 
-    // // Set high resolution mode and block update mode
-    // data[0] = LIS3DH_REG_CTRL4;
-    // data[1] =0x88;
-    // if(!I2cWrite(addr,data,sizeof(data))) {
-    //     return false;
-    // }
+    // Set high resolution mode and block update mode
+    data[0] = LIS3DH_REG_CTRL4;
+    data[1] =0x88;
+    if(!I2cWrite(i2cAddr,data,sizeof(data))) {
+        return false;
+    }
 
     return true;
 }

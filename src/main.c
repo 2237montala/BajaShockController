@@ -137,8 +137,18 @@ int main (void){
   // Set up sensors
   bool temp = Lis3dhInit(LIS3DH_DEFAULT_ADDRESS,LIS3DH_DEFAULT_WAI);
   printf("Error: %x\r\n",I2cGetError());
-  if(temp == false) {
-    Error_Handler();
+  // if(temp == false) {
+  //   Error_Handler();
+  // }
+
+  // Test sensor data collection
+  struct Lis3dhDataStruct accelData;
+  while(true) {
+    Lis3dhRead(&accelData);
+    printf("X Accel: %.2f\r\n",accelData.xGs);
+    printf("Y Accel: %.2f\r\n",accelData.yGs);
+    printf("Z Accel: %.2f\r\n",accelData.zGs);
+    HAL_Delay(250);
   }
 
   // Calculate the node's CAN id based on on the dip switch position
