@@ -39,9 +39,7 @@ bool Lis3dhInit(uint8_t addr, uint8_t nWAI) {
 
     // Enable reading on all axes in normal mode
     uint8_t regConfig = (LIS3DH_AXIS_X | LIS3DH_AXIS_Y | LIS3DH_AXIS_Z | LIS3DH_NORMAL_MODE);
-    // uint8_t data[2] = {LIS3DH_REG_CTRL1,regConfig};
     if(!writeRegister(LIS3DH_REG_CTRL1,regConfig)) {
-    //if(!I2cWrite(i2cAddr,data,sizeof(data))) {
         return false;
     }
 
@@ -56,10 +54,7 @@ bool Lis3dhInit(uint8_t addr, uint8_t nWAI) {
     // getRegister(LIS3DH_REG_CTRL4,&temp);
 
     // Set high resolution mode and block update mode
-    // data[0] = LIS3DH_REG_CTRL4;
-    // data[1] =0x88;
     if(!writeRegister(LIS3DH_REG_CTRL4,0x88)) {
-    // if(!I2cWrite(i2cAddr,data,sizeof(data))) {
         return false;
     }
 
