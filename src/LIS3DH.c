@@ -49,7 +49,7 @@ bool Lis3dhInit(uint8_t addr, uint8_t nWAI) {
     // getRegister(LIS3DH_REG_CTRL1,&temp);
 
     // Set sampling rate
-    if(!Lis3dhSetDataRate(LIS3DH_DATARATE_400_HZ)) {
+    if(!Lis3dhSetDataRate(LIS3DH_DATARATE_LOWPOWER_5KHZ)) {
         return false;
     }
 
