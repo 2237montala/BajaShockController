@@ -45,7 +45,7 @@ bool Lis3dhInit(uint8_t addr, uint8_t nWAI) {
         return false;
     }
 
-    uint8_t temp;
+    //uint8_t temp;
     // getRegister(LIS3DH_REG_CTRL1,&temp);
 
     // Set sampling rate
