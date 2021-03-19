@@ -145,9 +145,9 @@ int main (void){
   struct Lis3dhDataStruct accelData;
   while(true) {
     Lis3dhRead(&accelData);
-    printf("X Accel: %2.2f\r\n",accelData.xGs);
-    printf("Y Accel: %2.2f\r\n",accelData.yGs);
-    printf("Z Accel: %2.2f\r\n",accelData.zGs);
+    printf("X Accel: %.2f\r\n",accelData.xGs);
+    printf("Y Accel: %.2f\r\n",accelData.yGs);
+    printf("Z Accel: %.2f\r\n",accelData.zGs);
     HAL_Delay(250);
   }
 

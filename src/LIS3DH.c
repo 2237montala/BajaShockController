@@ -46,14 +46,14 @@ bool Lis3dhInit(uint8_t addr, uint8_t nWAI) {
     }
 
     uint8_t temp;
-    getRegister(LIS3DH_REG_CTRL1,&temp);
+    // getRegister(LIS3DH_REG_CTRL1,&temp);
 
     // Set sampling rate
     if(!Lis3dhSetDataRate(LIS3DH_DATARATE_400_HZ)) {
         return false;
     }
 
-    getRegister(LIS3DH_REG_CTRL4,&temp);
+    // getRegister(LIS3DH_REG_CTRL4,&temp);
 
     // Set high resolution mode and block update mode
     // data[0] = LIS3DH_REG_CTRL4;
@@ -63,7 +63,7 @@ bool Lis3dhInit(uint8_t addr, uint8_t nWAI) {
         return false;
     }
 
-    getRegister(LIS3DH_REG_CTRL4,&temp);
+    //getRegister(LIS3DH_REG_CTRL4,&temp);
 
     return true;
 }
@@ -85,7 +85,7 @@ bool Lis3dhRead(struct Lis3dhDataStruct *dataSample) {
         // Enable auto increment of address by setting MSb of address 1
         uint8_t buffer[6];
         //LIS3DH_REG_OUT_X_L
-        success = I2cWriteThenRead(i2cAddr,LIS3DH_REG_CTRL1 | 0x80, buffer, sizeof(buffer));
+        success = I2cWriteThenRead(i2cAddr,LIS3DH_REG_OUT_X_L | 0x80, buffer, sizeof(buffer));
         if(success) {
             // Convert the individual bytes from sensor into 16 bit accelerations
             // Taken from Adafruit's implementation of LIS3DH library
@@ -173,8 +173,9 @@ uint8_t Lis3dhGetAddress() {
 // Static methods
 static bool getRegister(uint8_t registerAddress, uint8_t *regValue) {
     // Get the current register value from the sensor
-    volatile HAL_StatusTypeDef test = I2cWriteThenReadByte(i2cAddr,registerAddress, regValue);
-    return test == HAL_OK;
+    //return I2cWriteThenReadByte(i2cAddr,registerAddress, regValue);
+    volatile bool status = I2cWriteThenReadByte(i2cAddr,registerAddress, regValue);
+    return status;
 }
 
 static bool writeRegister(uint8_t registerAddress, uint8_t regValue) {

@@ -62,6 +62,8 @@ bool I2cIsDeviceReady(uint8_t deviceID) {
 }
 
 bool I2cRead(uint8_t deviceID, uint8_t *buffer, uint8_t len) {
+    // HAL_StatusTypeDef status =  HAL_I2C_Master_Receive(&I2cHandle,deviceID,buffer,len,I2C_OPERATION_TIMEOUT);
+    // return status == HAL_OK;
     return HAL_I2C_Master_Receive(&I2cHandle,deviceID,buffer,len,I2C_OPERATION_TIMEOUT) == HAL_OK;
 }
 
@@ -87,6 +89,8 @@ bool I2cWrite(uint8_t deviceID, uint8_t *buffer, uint8_t len) {
 
 bool I2cWriteThenReadByte(uint8_t deviceID, uint16_t deviceRegAddr,uint8_t *value) {
     return I2cWriteThenRead(deviceID,deviceRegAddr,value,sizeof(uint8_t));
+    // bool status = I2cWriteThenRead(deviceID,deviceRegAddr,value,sizeof(uint8_t));
+    // return status;
 }
 
 bool I2cWriteThenReadTwoBytes(uint8_t deviceID, uint16_t deviceRegAddr, uint16_t *value) {
