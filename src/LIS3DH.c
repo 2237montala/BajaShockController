@@ -45,10 +45,15 @@ bool Lis3dhInit(uint8_t addr, uint8_t nWAI) {
         return false;
     }
 
+    uint8_t temp;
+    getRegister(LIS3DH_REG_CTRL1,&temp);
+
     // Set sampling rate
     if(!Lis3dhSetDataRate(LIS3DH_DATARATE_400_HZ)) {
         return false;
     }
+
+    getRegister(LIS3DH_REG_CTRL4,&temp);
 
     // Set high resolution mode and block update mode
     // data[0] = LIS3DH_REG_CTRL4;
@@ -57,6 +62,8 @@ bool Lis3dhInit(uint8_t addr, uint8_t nWAI) {
     // if(!I2cWrite(i2cAddr,data,sizeof(data))) {
         return false;
     }
+
+    getRegister(LIS3DH_REG_CTRL4,&temp);
 
     return true;
 }
