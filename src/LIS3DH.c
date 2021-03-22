@@ -5,9 +5,17 @@ uint8_t i2cAddr;
 uint8_t wai;
 lis3dh_range_t setGRange;
 
+uint32_t numBitsInRawAccel = 8 * sizeof(uint16_t);
+uint32_t accelerationMaxValue = 0;
+uint32_t accelerationZeroValue = 0;
+
+uint32_t xRawOffset,yRawOffset,zRawOffset = 0;
+
 static bool getRegister(uint8_t registerAddress, uint8_t *regValue);
 
 static bool writeRegister(uint8_t registerAddress, uint8_t regValue);
+
+static void convertToGs(float *valueInG, uint32_t valueInRaw, uint32_t lsb_factor, uint32_t scalingFactorToGs);
 
 bool Lis3dhInit(uint8_t addr, uint8_t nWAI) {
     // Save local versoin of constructer params
@@ -53,14 +61,26 @@ bool Lis3dhInit(uint8_t addr, uint8_t nWAI) {
 
     // getRegister(LIS3DH_REG_CTRL4,&temp);
 
-    // Set high resolution mode and block update mode
-    if(!writeRegister(LIS3DH_REG_CTRL4,0x88)) {
+    // Set normal resolution mode and block update mode
+    // Normal mode is 10bit
+    if(!writeRegister(LIS3DH_REG_CTRL4,0x80)) {
         return false;
     }
+
+    // Set up the zero value which is half the range of the raw range
+    accelerationZeroValue = (1 << (numBitsInRawAccel-1));
+
+    accelerationMaxValue = (1 << numBitsInRawAccel);
 
     //getRegister(LIS3DH_REG_CTRL4,&temp);
 
     return true;
+}
+
+void Lis3dhSetOffsets(uint32_t newXRawOffset,uint32_t newYRawOffset,uint32_t newZRawOffset) {
+    xRawOffset = newXRawOffset;
+    yRawOffset = newYRawOffset;
+    zRawOffset = newZRawOffset;
 }
 
 uint8_t Lis3dhGetDeviceID(void) {
@@ -68,8 +88,6 @@ uint8_t Lis3dhGetDeviceID(void) {
     I2cWriteThenReadByte(i2cAddr,LIS3DH_REG_WHOAMI,&deviceId);
     return deviceId;
 }
-bool haveNewData(void);
-bool enableDRDY(bool enable_drdy, uint8_t int_pin);
 
 bool Lis3dhRead(struct Lis3dhDataStruct *dataSample) {
     bool success = true;
@@ -83,7 +101,6 @@ bool Lis3dhRead(struct Lis3dhDataStruct *dataSample) {
         success = I2cWriteThenRead(i2cAddr,LIS3DH_REG_OUT_X_L | 0x80, buffer, sizeof(buffer));
         if(success) {
             // Convert the individual bytes from sensor into 16 bit accelerations
-            // Taken from Adafruit's implementation of LIS3DH library
             dataSample->xRaw = buffer[0] | ((uint16_t) buffer[1] << 8);
             dataSample->yRaw = buffer[2] | ((uint16_t) buffer[3] << 8);
             dataSample->zRaw = buffer[4] | ((uint16_t) buffer[5] << 8);
@@ -107,16 +124,15 @@ bool Lis3dhRead(struct Lis3dhDataStruct *dataSample) {
                 break;
             }
 
-            dataSample->xGs = lsb_value * ((float) dataSample->xRaw / LIS3DH_LSB16_TO_KILO_LSB10);
-            dataSample->yGs = lsb_value * ((float) dataSample->yRaw / LIS3DH_LSB16_TO_KILO_LSB10);
-            dataSample->zGs = lsb_value * ((float) dataSample->zRaw / LIS3DH_LSB16_TO_KILO_LSB10);
+            convertToGs(&(dataSample->xGs),dataSample->xRaw,lsb_value,LIS3DH_LSB16_TO_KILO_LSB10);
+            convertToGs(&(dataSample->yGs),dataSample->yRaw,lsb_value,LIS3DH_LSB16_TO_KILO_LSB10);
+            convertToGs(&(dataSample->zGs),dataSample->zRaw,lsb_value,LIS3DH_LSB16_TO_KILO_LSB10);
+
         }
     }
 
     return success;
 }
-
-int16_t readADC(uint8_t a);
 
 bool Lis3dhSetRange(lis3dh_range_t range) {
     bool success = false;
@@ -178,4 +194,16 @@ static bool writeRegister(uint8_t registerAddress, uint8_t regValue) {
     uint8_t cmd[2] = {registerAddress,regValue};
     return I2cWrite(i2cAddr,cmd,sizeof(cmd));
     //return I2cWriteTwoBytes(i2cAddr,cmd) == HAL_OK;
+}
+
+static void convertToGs(float *valueInG, uint32_t valueInRaw, uint32_t lsb_factor, uint32_t scalingFactorToGs) {
+    if(valueInRaw > accelerationZeroValue) {
+        valueInRaw = accelerationMaxValue - valueInRaw;
+        valueInRaw *= lsb_factor;
+        *valueInG = (float)valueInRaw/scalingFactorToGs;
+    } else {
+        valueInRaw *= lsb_factor;
+        *valueInG = (float)valueInRaw/scalingFactorToGs;
+        *valueInG *= -1;
+    }
 }

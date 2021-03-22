@@ -136,6 +136,7 @@ int main (void){
 
   // Set up sensors
   bool temp = Lis3dhInit(LIS3DH_DEFAULT_ADDRESS,LIS3DH_DEFAULT_WAI);
+  Lis3dhSetRange(LIS3DH_RANGE_4_G);
   printf("Error: %x\r\n",I2cGetError());
   if(temp == false) {
     Error_Handler();

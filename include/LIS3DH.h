@@ -344,11 +344,8 @@ struct Lis3dhDataStruct {
 bool Lis3dhInit(uint8_t addr, uint8_t nWAI);
 
 uint8_t Lis3dhGetDeviceID(void);
-bool haveNewData(void);
-bool enableDRDY(bool enable_drdy, uint8_t int_pin);
 
 bool Lis3dhRead(struct Lis3dhDataStruct *dataSample);
-int16_t readADC(uint8_t a);
 
 bool Lis3dhSetRange(lis3dh_range_t range);
 lis3dh_range_t Lis3dhGetRange(void);
