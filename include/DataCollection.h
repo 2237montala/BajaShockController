@@ -9,6 +9,7 @@
 #include "config.h"
 #include "stdbool.h"
 #include "fifofast.h"
+#include "LIS3DH.h"
 
 #define NUMBER_OF_AXIS 3
 #define X_INDEX 0
@@ -26,6 +27,7 @@ struct ShockSensorRawData {
 typedef struct ShockSensorData{
     float32_t accels[NUMBER_OF_AXIS];
     float32_t linearPos;
+    uint8_t inFreefall;
 } ShockSensorDataStruct;
 
 //ShockSensorDataStruct sensorDataBuffer[DATA_BUFFER_LEN];
@@ -36,7 +38,7 @@ bool collectData(void);
 
 bool convertShockGsToAccel(float32_t *accelArray, uint32_t numberOfAxis);
 
-bool convertShockTicksToPosition(float32_t *linearPos);
+bool convertShockTicksToPosition(float32_t *linearPos, uint32_t rawTicks);
 
 struct ShockSensorData convertRawShockData(struct ShockSensorRawData rawDataStruct);
 

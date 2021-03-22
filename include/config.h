@@ -30,6 +30,19 @@
 #define DATA_BUFFER_LEN 32
 #endif
 
+// Sets the lower bound of the free fall detection threshold
+// The lower this value the easier we will be in free fall
+#define FREE_FALL_G_THRESHOLD -0.9f
+
+// Defines which axis we will check for free fall acceleration
+// Options are: X_INDEX, Y_INDEX, Z_INDEX
+#define AXIS_FOR_FREE_FALL Z_INDEX
+
+// Defines how many samples must be in free fall to consider the car in free fall
+// This value is the number of samples so the length of time this will take
+// is DATA_COLLECTION_RATE * number of samples
+#define TIME_BEFORE_VALID_FREE_FALL 0
+
 // CANOpen Settings -------------------------------------------------------------------------------
 // The base Node ID must be lower than 0x7F. The lower the number the higher it's priority on the 
 // CAN bus.

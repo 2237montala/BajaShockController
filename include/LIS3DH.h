@@ -338,7 +338,6 @@ struct Lis3dhDataStruct {
   float xGs;
   float yGs;
   float zGs;
-  uint8_t isInFreefall;
 };
 
 bool Lis3dhInit(uint8_t addr, uint8_t nWAI);

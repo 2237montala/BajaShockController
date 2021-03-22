@@ -12,6 +12,9 @@ ShockSensorDataStruct lastestFilteredData;
 // Create a fifo for holding the data
 _fff_declare(ShockSensorDataStruct,ShockSenorDataFifo,DATA_BUFFER_LEN);
 
+// Static function declarations
+static bool collectDataFromSensors();
+
 void initializeCollectData() {
 
     // Zero out all the data structures
@@ -24,43 +27,57 @@ void initializeCollectData() {
     _fff_init(ShockSenorDataFifo);
 }
 
-/*
- * PURPOSE
- *      This function samples the sensors connected to the device and saves their raw
- *      output to a structure for later usage.
- * PARAMETERS
- *      None
- * RETURNS
- *      bool - whether data was collected without error
- */
-bool collectRawData(void) {
-    
-    newDataSample.gs[X_INDEX] += 1;
-    newDataSample.gs[Y_INDEX] += 1;
-    newDataSample.gs[Z_INDEX] += 1;
-    newDataSample.encoderTicks += 1;
+static bool collectDataFromSensors() {
+    // Temporary struct for holding accelerometer data
+    static struct Lis3dhDataStruct accelSensorData;
+    static uint32_t currLinearPosTicks;
+    bool succeed = false;
 
-    return true;
+    // Read accelerometer
+    succeed = Lis3dhRead(&accelSensorData);
+
+    // Copy over the sensor data to the fifo struct
+    newConvertedDataSample.accels[X_INDEX] = accelSensorData.xGs;
+    newConvertedDataSample.accels[Y_INDEX] = accelSensorData.yGs;
+    newConvertedDataSample.accels[Z_INDEX] = accelSensorData.zGs;
+
+    // Get which index the user wants to check for free fall
+    float32_t accelToCheck = 0;
+    switch(AXIS_FOR_FREE_FALL) {
+        case X_INDEX:
+            accelToCheck = newConvertedDataSample.accels[X_INDEX];
+            break;
+        case Y_INDEX:
+            accelToCheck = newConvertedDataSample.accels[Y_INDEX];
+            break;
+        case Z_INDEX:
+            accelToCheck = newConvertedDataSample.accels[Z_INDEX];
+            break;
+        default:
+            accelToCheck = INFINITY;
+            break;  
+    }
+
+    if(accelToCheck != INFINITY && accelToCheck < FREE_FALL_G_THRESHOLD) {
+        // We could be in free fall so we should check
+        // TODO: Implement true free fall detection
+        newConvertedDataSample.inFreefall = true;
+    }
+
+    // Read in encoder ticks
+    currLinearPosTicks++; // Temp sensor reading 
+
+    // Set encoder ticks to data struct
+    succeed = convertShockTicksToPosition(&(newConvertedDataSample.linearPos),currLinearPosTicks);
+
+    return succeed;
 }
-
 
 bool collectData() {
     bool succeed = false;
 
-    //Collect raw data
-    succeed = collectRawData();
-    if(!succeed) {
-        return false;
-    }
-
-    // Convert g values to accel
-    succeed = convertShockGsToAccel(newConvertedDataSample.accels,NUMBER_OF_AXIS);
-    if(!succeed) {
-        return false;
-    }
-
-    // Convert linear enocder ticks to new position
-    succeed = convertShockTicksToPosition(&(newConvertedDataSample.linearPos));
+    // Collect data
+    succeed = collectDataFromSensors();
     if(!succeed) {
         return false;
     }
@@ -76,27 +93,16 @@ bool collectData() {
     return true;
 }
 
-// Takes in the location to save the converted raw sensor data
-bool convertShockGsToAccel(float32_t *accelArray, uint32_t numberOfAxis) {
-    if(numberOfAxis <= NUMBER_OF_AXIS) {
-        for(int i = 0; i < numberOfAxis; i++) {
-            accelArray[i] = convertGsToAccel(newDataSample.gs[i]);
-        }
-        return true;
-    }
-    return false;
-}
-
-bool convertShockTicksToPosition(float32_t *linearPos) {
-    *linearPos = (float32_t) newDataSample.encoderTicks;
+bool convertShockTicksToPosition(float32_t *linearPos, uint32_t rawTicks) {
+    *linearPos = (float32_t) rawTicks;
     return true;
 }
 
-float convertGsToAccel(uint32_t g) {
-    return (float32_t) g;
-}
 
 void filterData() {
+    // Clear the old data out
+    memset(&lastestFilteredData,0x0,sizeof(lastestFilteredData));
+
     // Simple running average over all the fifo
     for(int i = 0; i < DATA_BUFFER_LEN; i++) {
         // Sum accels
@@ -107,6 +113,15 @@ void filterData() {
         // Sum linear position
         lastestFilteredData.linearPos += _fff_peek(ShockSenorDataFifo,i).linearPos;
     }
+
+    for(int i = 0; i < NUMBER_OF_AXIS; i++) {
+        lastestFilteredData.accels[i] /= DATA_BUFFER_LEN;
+    }
+
+    lastestFilteredData.linearPos /= DATA_BUFFER_LEN;
+
+    // TODO: do something with free fall here
+    // Maybe count the number of continous free fall values
 }
 
 ShockSensorDataStruct* getMostRecentSensorData() {
