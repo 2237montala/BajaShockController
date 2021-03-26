@@ -63,6 +63,10 @@
 #define GREEN_LED_PIN D8
 #define RED_LED_PIN D9
 
+// How long between built in testing (bit) checks
+#define BIT_INTERVAL_MS 1000
+
+
 
 // Debug settings ---------------------------------------------------------------------------------
 // Enables or disables toggling pin every CO processing loop
