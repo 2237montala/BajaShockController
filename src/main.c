@@ -90,19 +90,20 @@ int setupMicro(void) {
     /* Configure the system clock to 64 MHz */
     SystemClock_Config();
 
-    setupDebugUart(&debugUartHandle,DEBUG_UART_BAUD_RATE);
-
+    #ifdef DEBUG_UART_ON
+      setupDebugUart(&debugUartHandle,DEBUG_UART_BAUD_RATE);
+    #endif
 
     /* Initialize BSP Led for LED2 */
     BSP_LED_Init(LED2);
     BspGpioInitOutput(GREEN_LED_PIN);
     BspGpioInitOutput(RED_LED_PIN);
-    BspGpioInitOutput(DEBUG_GPIO_PIN);
     BspGpioInit(NODE_ID_BIT_ONE_PIN,INPUT_PULLUP);
     BspGpioInit(NODE_ID_BIT_TWO_PIN,INPUT_PULLUP);
-    
-    BspGpioWrite(LED2,1);
-    BspGpioWrite(GREEN_LED_PIN,1);
+
+    #ifdef DEBUG_GPIO_ON
+      BspGpioInitOutput(DEBUG_GPIO_PIN);
+    #endif
 
     // Set up I2C
     I2cInit(I2Cx,I2C_HIGH_SPEED,I2C_DUTYCYCLE_2,HAL_I2C_MODE_MASTER,0x00);
@@ -167,7 +168,9 @@ int main (void){
   setupMicro();
 
   // Set up sensors
-  setupSensors();
+  if(!setupSensors()) {
+    Error_Handler();
+  }
 
   // Calculate the node's CAN id based on on the dip switch position
   // Connect to ground is a 0
@@ -176,35 +179,47 @@ int main (void){
   /* Allocate memory but these are statically allocated so no malloc */
   err = CO_new(&heapMemoryUsed);
   if (err != CO_ERROR_NO) {
-      log_printf("Error: Can't allocate memory\r\n");
+      #ifdef DEBUG_UART_ON
+        log_printf("Error: Can't allocate memory\r\n");
+      #endif
       return 0;
   }
   else {
+    #ifdef DEBUG_UART_ON
       log_printf("Allocated %d bytes for CANopen objects\r\n", heapMemoryUsed);
+    #endif
   }
 
   while(reset != CO_RESET_APP){
 /* CANopen communication reset - initialize CANopen objects *******************/
     uint16_t timer1msPrevious;
 
-    log_printf("CANopenNode - Reset communication...\r\n");
+    #ifdef DEBUG_UART_ON
+      log_printf("CANopenNode - Reset communication...\r\n");
+    #endif
 
     /* disable CAN and CAN interrupts */
 
     /* initialize CANopen */
     err = CO_CANinit(CANmoduleAddress, CAN_BAUD_RATE);
     if (err != CO_ERROR_NO) {
-        log_printf("Error: CAN initialization failed: %d\r\n", err);
+        #ifdef DEBUG_UART_ON
+          log_printf("Error: CAN initialization failed: %d\r\n", err);
+        #endif
         return 0;
     }
 
     err = CO_CANopenInit(currNodeId);
     if(err != CO_ERROR_NO && err != CO_ERROR_NODE_ID_UNCONFIGURED_LSS) {
+      #ifdef DEBUG_UART_ON
         log_printf("Error: CANopen initialization failed: %d\r\n", err);
-        return 0;
+      #endif
+      return 0;
     }
 
-    printf("Starting with node id: 0x%x\r\n",currNodeId);
+    #ifdef DEBUG_UART_ON
+      printf("Starting with node id: 0x%x\r\n",currNodeId);
+    #endif
 
     // Reset timer just inscase the registers were not reset
     stopCOThreadTimer(&coThreadTimer);
@@ -231,8 +246,10 @@ int main (void){
     reset = CO_RESET_NOT;
     timer1msPrevious = CO_timer1ms;
 
+    #ifdef DEBUG_UART_ON
     log_printf("CANopenNode - Running...\r\n");
     fflush(stdout);
+    #endif
 
     uint32_t lastLedBlinkTime = HAL_GetTick();
     uint32_t lastDataCollectTime = 0;
@@ -240,7 +257,10 @@ int main (void){
     uint32_t oldError = CanHandle.Instance->ESR;
 
     while(reset == CO_RESET_NOT){
-/* loop for normal program execution ******************************************/
+    /* loop for normal program execution ******************************************/
+        #ifdef DEBUG_GPIO_ON
+          BspGpioWrite(DEBUG_GPIO_PIN,GPIO_PIN_SET);
+        #endif
         // Toggle an gpio to do some timing
 
         uint16_t timer1msCopy, timer1msDiff;
@@ -250,7 +270,6 @@ int main (void){
         timer1msPrevious = timer1msCopy;
 
         loopMsValue = HAL_GetTick();
-
 
         /* CANopen process */
         reset = CO_process(CO, (uint32_t)timer1msDiff*1000, NULL);
@@ -278,6 +297,10 @@ int main (void){
           collectData();
         }
         
+        #ifdef DEBUG_GPIO_ON
+          BspGpioWrite(DEBUG_GPIO_PIN,GPIO_PIN_RESET);
+        #endif
+
         /* optional sleep for short time */
     }
   }
@@ -288,16 +311,18 @@ int main (void){
   BspGpioWrite(RED_LED_PIN,1);
 
 /* program exit ***************************************************************/
-    /* stop threads */
+  /* stop threads */
 
 
-    /* delete objects from memory */
-    CO_delete((void*) &CanHandle);
+  /* delete objects from memory */
+  CO_delete((void*) &CanHandle);
 
+  #ifdef DEBUG_UART_ON
     log_printf("CANopenNode finished\r\n");
+  #endif
 
-    /* reset */
-    return 0;
+  /* reset */
+  return 0;
 }
 
 
@@ -352,7 +377,10 @@ void NMT_Changed_Callback(CO_NMT_internalState_t state) {
     ledBlinkRate = 100;
     break;
   }
-  printf("Entering state %d\r\n",state);
+
+  #ifdef DEBUG_UART_ON
+    printf("Entering state %d\r\n",state);
+  #endif
 }
 
 // Micro controller specific function calls
@@ -538,9 +566,11 @@ void systemSoftwareReset() {
 }
 
 void HAL_CAN_ErrorCallback(CAN_HandleTypeDef *hcan){
-  printf("CAN TEC Error: %lu\r\n",(hcan->Instance->ESR & CAN_ESR_TEC_Msk) >> CAN_ESR_TEC_Pos);
-  printf("CAN REC Error: %lu\r\n",(hcan->Instance->ESR & CAN_ESR_REC_Msk) >> CAN_ESR_REC_Pos);
-  printf("CAN error: 0x%lx\r\n",hcan->ErrorCode);
+  #ifdef DEBUG_UART_ON
+    printf("CAN TEC Error: %lu\r\n",(hcan->Instance->ESR & CAN_ESR_TEC_Msk) >> CAN_ESR_TEC_Pos);
+    printf("CAN REC Error: %lu\r\n",(hcan->Instance->ESR & CAN_ESR_REC_Msk) >> CAN_ESR_REC_Pos);
+    printf("CAN error: 0x%lx\r\n",hcan->ErrorCode);
+  #endif
 }
 
 // Since CanOpen uses the object dictionary for sending data we need to update the
