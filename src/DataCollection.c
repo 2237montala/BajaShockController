@@ -58,12 +58,13 @@ static bool collectDataFromSensors() {
             break;  
     }
 
-    if(accelToCheck != INFINITY && accelToCheck < FREE_FALL_G_THRESHOLD) {
+    if(accelToCheck != INFINITY && accelToCheck > FREE_FALL_G_THRESHOLD_NEG && accelToCheck < FREE_FALL_G_THRESHOLD_POS) {
         // We could be in free fall so we should check
         // TODO: Implement true free fall detection
         newConvertedDataSample.inFreefall = true;
     }
 
+    // TODO: Add correct encoder tick calculating
     // Read in encoder ticks
     currLinearPosTicks++; // Temp sensor reading 
 
@@ -102,6 +103,11 @@ bool convertShockTicksToPosition(float32_t *linearPos, uint32_t rawTicks) {
 void filterData() {
     // Clear the old data out
     memset(&lastestFilteredData,0x0,sizeof(lastestFilteredData));
+    
+    // Holds the number of free falls events between a time interval
+    bool consecutiveFreefall = true;
+    static uint32_t totalValidFreefalls = 0;
+    uint32_t currValidFreefalls = 0;
 
     // Simple running average over all the fifo
     for(int i = 0; i < DATA_BUFFER_LEN; i++) {
@@ -112,6 +118,16 @@ void filterData() {
 
         // Sum linear position
         lastestFilteredData.linearPos += _fff_peek(ShockSenorDataFifo,i).linearPos;
+
+        // TODO: do something with free fall here
+        // // Sum all instances that are in between valid free fall values
+        // if(consecutiveFreefall && _fff_peek(ShockSenorDataFifo,i).inFreefall) { {
+        //         currValidFreefalls++;
+        //     } else {
+        //         consecutiveFreefall = false;
+        //     }
+        // }
+        
     }
 
     for(int i = 0; i < NUMBER_OF_AXIS; i++) {
@@ -121,7 +137,17 @@ void filterData() {
     lastestFilteredData.linearPos /= DATA_BUFFER_LEN;
 
     // TODO: do something with free fall here
-    // Maybe count the number of continous free fall values
+    // // Maybe count the number of continous free fall values
+    // totalValidFreefalls += currValidFreefalls;
+
+    // if(currValidFreefalls < TIME_BEFORE_FREE_FALL_RESET) {
+    //     // Free fall reset
+    //     lastestFilteredData.inFreefall = false;
+    //     totalValidFreefalls = 0;
+    // } else if(totalValidFreefalls >= TIME_BEFORE_VALID_FREE_FALL) {
+    //     lastestFilteredData.inFreefall = true;
+    // }
+    lastestFilteredData.inFreefall = false;
 }
 
 ShockSensorDataStruct* getMostRecentSensorData() {
