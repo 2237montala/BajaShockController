@@ -172,6 +172,9 @@ int main (void){
     Error_Handler();
   }
 
+  // TODO: check if sensor values are within expected range
+  // Check sensor value for errors
+
   // Calculate the node's CAN id based on on the dip switch position
   // Connect to ground is a 0
   currNodeId = setupNodeId();
@@ -252,9 +255,9 @@ int main (void){
     #endif
 
     uint32_t lastLedBlinkTime = HAL_GetTick();
-    uint32_t lastDataCollectTime = 0;
+    uint32_t lastDataCollectTime = lastLedBlinkTime;
+    //uint32_t lastBitTime = lastLedBlinkTime;
     uint32_t loopMsValue = 0;
-    uint32_t oldError = CanHandle.Instance->ESR;
 
     while(reset == CO_RESET_NOT){
     /* loop for normal program execution ******************************************/
