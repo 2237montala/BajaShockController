@@ -32,7 +32,10 @@
 
 // Sets the lower bound of the free fall detection threshold
 // The lower this value the easier we will be in free fall
-#define FREE_FALL_G_THRESHOLD -0.9f
+// Free fall is detected when the sensor reads about 0g on the 
+// axis perpendicular with the ground
+#define FREE_FALL_G_THRESHOLD_NEG -0.1f
+#define FREE_FALL_G_THRESHOLD_POS  0.1f
 
 // Defines which axis we will check for free fall acceleration
 // Options are: X_INDEX, Y_INDEX, Z_INDEX
@@ -42,6 +45,8 @@
 // This value is the number of samples so the length of time this will take
 // is DATA_COLLECTION_RATE * number of samples
 #define TIME_BEFORE_VALID_FREE_FALL 0
+
+#define TIME_BEFORE_FREE_FALL_RESET 0
 
 // CANOpen Settings -------------------------------------------------------------------------------
 // The base Node ID must be lower than 0x7F. The lower the number the higher it's priority on the 
@@ -60,9 +65,16 @@
 
 
 // Debug settings ---------------------------------------------------------------------------------
+// Enables or disables toggling pin every CO processing loop
+// Comment out to disable
+#define DEBUG_GPIO_ON
 
 // This digital pin is toggled on during the CanOpen interrupt
 #define DEBUG_GPIO_PIN D4
+
+// Enable or disables printing of debug messages
+// Comment out to disable
+#define DEBUG_UART_ON
 
 // Baud rate for debug uart
 // If equal to 0 then there will be no debug messages
