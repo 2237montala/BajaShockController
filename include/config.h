@@ -67,3 +67,15 @@
 // Baud rate for debug uart
 // If equal to 0 then there will be no debug messages
 #define DEBUG_UART_BAUD_RATE 115200
+
+// Accelerometer Settings -------------------------------------------------------------------------
+// Possible options for accelerometer g range
+// These needs to be constants
+#define ACCLEROMETER_2G_RANGE LIS3DH_RANGE_2_G
+#define ACCLEROMETER_4G_RANGE LIS3DH_RANGE_4_G
+#define ACCLEROMETER_8G_RANGE LIS3DH_RANGE_8_G
+#define ACCLEROMETER_16G_RANGE LIS3DH_RANGE_16_G
+#define ACCELEROMETER_DEFAULT_RANGE ACCLEROMETER_2G_RANGE
+
+// Sets the max g the sensor will read
+#define ACCELEROMETER_G_RANGE ACCLEROMETER_4G_RANGE

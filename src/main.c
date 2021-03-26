@@ -111,6 +111,38 @@ int setupMicro(void) {
     return 0;
 }
 
+bool setupSensors(void) {
+  // Start accelerometer
+  bool temp = Lis3dhInit(LIS3DH_DEFAULT_ADDRESS,LIS3DH_DEFAULT_WAI);
+  if(!temp) return false;
+
+  // Set range of accelerometer
+  switch(ACCELEROMETER_G_RANGE) {
+    case ACCLEROMETER_2G_RANGE:
+      temp = Lis3dhSetRange(ACCLEROMETER_2G_RANGE);
+      break;
+
+    case ACCLEROMETER_4G_RANGE:
+      temp = Lis3dhSetRange(ACCLEROMETER_4G_RANGE);
+      break;
+
+    case ACCLEROMETER_8G_RANGE:
+      temp = Lis3dhSetRange(ACCLEROMETER_8G_RANGE);
+      break;
+
+    case ACCLEROMETER_16G_RANGE:
+      temp = Lis3dhSetRange(ACCLEROMETER_16G_RANGE);
+      break;
+
+    default:
+      temp = Lis3dhSetRange(ACCELEROMETER_DEFAULT_RANGE);
+      break;
+  }
+  if(!temp) return false;
+
+  return temp;
+}
+
 uint8_t setupNodeId() {
   uint8_t tempNodeId = NODE_ID_BASE;
   // Read the pins for their bit status
@@ -135,22 +167,7 @@ int main (void){
   setupMicro();
 
   // Set up sensors
-  bool temp = Lis3dhInit(LIS3DH_DEFAULT_ADDRESS,LIS3DH_DEFAULT_WAI);
-  Lis3dhSetRange(LIS3DH_RANGE_4_G);
-  printf("Error: %x\r\n",I2cGetError());
-  if(temp == false) {
-    Error_Handler();
-  }
-
-  // Test sensor data collection
-  struct Lis3dhDataStruct accelData;
-  while(true) {
-    Lis3dhRead(&accelData);
-    printf("X Accel: %.2f\r\n",accelData.xGs);
-    printf("Y Accel: %.2f\r\n",accelData.yGs);
-    printf("Z Accel: %.2f\r\n",accelData.zGs);
-    HAL_Delay(250);
-  }
+  setupSensors();
 
   // Calculate the node's CAN id based on on the dip switch position
   // Connect to ground is a 0
