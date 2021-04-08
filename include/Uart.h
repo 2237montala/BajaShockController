@@ -37,6 +37,8 @@ int UART_putData(UART_HandleTypeDef *huart,uint8_t *ptr, int len);
  */
 int UART_putString(UART_HandleTypeDef *huart,char *str);
 
+int UART_putStringNL(UART_HandleTypeDef *huart,char *str);
+
 /**
   * @brief UART MSP Initialization 
   *        This function configures the hardware resources used in this example: 
