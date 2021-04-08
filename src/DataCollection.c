@@ -124,12 +124,13 @@ void filterData() {
     memset(&lastestFilteredData,0x0,sizeof(lastestFilteredData));
     
     // Holds the number of free falls events between a time interval
-    bool consecutiveFreefall = true;
-    static uint32_t totalValidFreefalls = 0;
-    uint32_t currValidFreefalls = 0;
+    // bool consecutiveFreefall = true;
+    // static uint32_t totalValidFreefalls = 0;
+    // uint32_t currValidFreefalls = 0;
 
+    // TODO : Change the average value to be the number of samples in the fifo
     // Simple running average over all the fifo
-    for(int i = 0; i < DATA_BUFFER_LEN; i++) {
+    for(int i = 0; i < _fff_mem_level(ShockSensorDataFifo); i++) {
         // Sum accels
         for(int q = 0; q < NUMBER_OF_AXIS; q++) {
             lastestFilteredData.accels[q] += _fff_peek(ShockSensorDataFifo,i).accels[q]; 
@@ -139,7 +140,7 @@ void filterData() {
         lastestFilteredData.linearPos += _fff_peek(ShockSensorDataFifo,i).linearPos;        
     }
 
-    for(int i = 0; i < NUMBER_OF_AXIS; i++) {
+    for(int i = 0; i < _fff_mem_level(ShockSensorDataFifo); i++) {
         lastestFilteredData.accels[i] /= DATA_BUFFER_LEN;
     }
 
@@ -148,7 +149,7 @@ void filterData() {
     // Set free fall state which was averaged out in the last samples
     // so no filtering has to be done here. If the system is changing free fall states
     // then this variable will be a few ms old. At most 5ms
-    lastestFilteredData.inFreefall = _fff_peek(ShockSensorDataFifo,0);
+    lastestFilteredData.inFreefall = _fff_peek(ShockSensorDataFifo,0).inFreefall;
 }
 
 ShockSensorDataStruct* getMostRecentSensorData() {
