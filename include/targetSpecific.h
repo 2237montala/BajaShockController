@@ -29,13 +29,17 @@
 #define USARTx_RX_GPIO_PORT              GPIOA
 
 /* Definition for CANx clock resources */
-// TX is pb9 , rx is pb8
+// TX is pb12 , rx is pb11
 #define CANx                           CAN1
 #define CANx_CLK_ENABLE()              __HAL_RCC_CAN1_CLK_ENABLE()
-#define CANx_GPIO_CLK_ENABLE()         __HAL_RCC_GPIOB_CLK_ENABLE()
+#define CANx_GPIO_CLK_ENABLE()         __HAL_RCC_GPIOA_CLK_ENABLE()
 
 #define CANx_FORCE_RESET()             __HAL_RCC_CAN1_FORCE_RESET()
 #define CANx_RELEASE_RESET()           __HAL_RCC_CAN1_RELEASE_RESET()
+
+/* Definition for CANx AFIO Remap */
+#define CANx_AFIO_REMAP_CLK_ENABLE()   __HAL_RCC_AFIO_CLK_ENABLE()
+#define CANx_AFIO_REMAP_RX_TX_PIN()    __HAL_AFIO_REMAP_CAN1_1()
 
 /* Definition for CANx Pins */
 #define CANx_TX_PIN                    GPIO_PIN_12

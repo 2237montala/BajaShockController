@@ -119,10 +119,10 @@ void HAL_CAN_MspInit(CAN_HandleTypeDef* hcan)
   CANx_GPIO_CLK_ENABLE();
 
   // Need to enable the alternate function clock
-  __HAL_RCC_AFIO_CLK_ENABLE();
+  CANx_AFIO_REMAP_CLK_ENABLE();
 
   // Switch the interal CAN rx/tx pins to be on PA11 and PA12
-  __HAL_AFIO_REMAP_CAN1_1();
+  CANx_AFIO_REMAP_RX_TX_PIN();
 
   // Switch the interal CAN rx/tx pins to be on PB8 and PB9
   // Share the same pins with I2C so swap to different pins
@@ -183,15 +183,15 @@ void HAL_CAN_MspDeInit(CAN_HandleTypeDef *hcan)
 
 void HAL_TIM_Base_MspInit(TIM_HandleTypeDef *htim) {
   if(htim->Instance == TIM4) {
-    // // Enable the clock that TIM4 is connected to. This might not be needed
-    // __HAL_RCC_GPIOA_CLK_ENABLE();
+    // Enable the clock that TIM4 is connected to. This might not be needed
+    __HAL_RCC_GPIOA_CLK_ENABLE();
 
-    // // Enable clock for the timer itself
-    // __HAL_RCC_TIM4_CLK_ENABLE();
+    // Enable clock for the timer itself
+    __HAL_RCC_TIM4_CLK_ENABLE();
 
-    // // Set up interrupts for the timer
-    // HAL_NVIC_SetPriority(TIM4_IRQn,TIM4_IRQ_PRIORITY,0);
-    // HAL_NVIC_EnableIRQ(TIM4_IRQn);
+    // Set up interrupts for the timer
+    HAL_NVIC_SetPriority(TIM4_IRQn,TIM4_IRQ_PRIORITY,0);
+    HAL_NVIC_EnableIRQ(TIM4_IRQn);
   }
   
 }
