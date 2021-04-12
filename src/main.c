@@ -173,13 +173,13 @@ int main (void){
     Error_Handler();
   }
 
-  while(true) {
-    struct Lis3dhDataStruct dataSample;
-    Lis3dhRead(&dataSample);
-    printf("X/Y/Z\r\n");
-    printf("%2.3f,%2.3f,%2.3f\r\n",dataSample.xGs,dataSample.yGs,dataSample.zGs);
-    HAL_Delay(200);
-  }
+  // while(true) {
+  //   struct Lis3dhDataStruct dataSample;
+  //   Lis3dhRead(&dataSample);
+  //   printf("X/Y/Z\r\n");
+  //   printf("%2.3f,%2.3f,%2.3f\r\n",dataSample.xGs,dataSample.yGs,dataSample.zGs);
+  //   HAL_Delay(200);
+  // }
 
   // TODO: check if sensor values are within expected range
   // Check sensor value for errors
@@ -488,13 +488,18 @@ static void setupDebugUart(UART_HandleTypeDef *huart, uint32_t buadRate) {
   */
 static void Error_Handler(void){
   /* Turn LED2 on */
-  
+  const int NUM_BLINKS = 2;
   while (1)
   {
-    BSP_LED_On(LED2);
-    HAL_Delay(500);
     BSP_LED_Off(LED2);
-    HAL_Delay(500);
+    // Number of blinks has to be multiplied by 2
+    for(int i = 0; i < 2 * NUM_BLINKS; i++) {
+      BSP_LED_Toggle(LED2);
+      HAL_Delay(250);
+    }
+    BSP_LED_Off(LED2);
+    HAL_Delay(1000);
+
   }
 }
 
