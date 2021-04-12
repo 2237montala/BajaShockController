@@ -173,6 +173,14 @@ int main (void){
     Error_Handler();
   }
 
+  while(true) {
+    struct Lis3dhDataStruct dataSample;
+    Lis3dhRead(&dataSample);
+    printf("X/Y/Z\r\n");
+    printf("%2.3f,%2.3f,%2.3f\r\n",dataSample.xGs,dataSample.yGs,dataSample.zGs);
+    HAL_Delay(200);
+  }
+
   // TODO: check if sensor values are within expected range
   // Check sensor value for errors
 
@@ -572,10 +580,21 @@ void systemSoftwareReset() {
 }
 
 void HAL_CAN_ErrorCallback(CAN_HandleTypeDef *hcan){
+  uint8_t tecErrors = (hcan->Instance->ESR & CAN_ESR_TEC_Msk) >> CAN_ESR_TEC_Pos;
+  uint8_t recErrors = (hcan->Instance->ESR & CAN_ESR_REC_Msk) >> CAN_ESR_REC_Pos;
+  uint32_t errorCode = hcan->ErrorCode;
+
+  // Reset tx error if we have exited the warning state
+  if(CO_isError(CO->em,CO_EM_CAN_BUS_WARNING) && tecErrors < 127) {
+    CO_errorReset(CO->em,CO_EM_CAN_BUS_WARNING, 0);
+  }
+
+  if(CO_isError(CO->em,CO_EM_CAN_BUS_WARNING) && recErrors < 127) {
+    CO_errorReset(CO->em,CO_EM_CAN_BUS_WARNING, 0);
+  }
+
   #ifdef DEBUG_UART_ON
-    printf("CAN TEC Error: %lu\r\n",(hcan->Instance->ESR & CAN_ESR_TEC_Msk) >> CAN_ESR_TEC_Pos);
-    printf("CAN REC Error: %lu\r\n",(hcan->Instance->ESR & CAN_ESR_REC_Msk) >> CAN_ESR_REC_Pos);
-    printf("CAN error: 0x%lx\r\n",hcan->ErrorCode);
+    printf("CAN TEC/REC/Error: %d/%d/%lx\r\n", tecErrors,recErrors,errorCode);
   #endif
 }
 

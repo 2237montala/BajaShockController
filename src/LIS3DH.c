@@ -30,6 +30,11 @@ bool Lis3dhInit(uint8_t addr, uint8_t nWAI) {
         return false;
     }
 
+    // If we reset the device while it was sending data it will still
+    // have data in the output register. Need to clock out that extra data
+    // or the device will not respond
+    I2cClockOutPreviousData(16);
+
     // Send out addr to see if the sensor responds
     // Try 5 times before giving up
     bool status = I2cIsDeviceReady(i2cAddr);
