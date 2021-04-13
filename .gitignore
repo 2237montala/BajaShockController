@@ -355,3 +355,6 @@ MigrationBackup/
 .piolibdeps
 .clang_complete
 .gcc-flags.json
+
+# The .vscode file hold system specific compiling info
+.vscode
