@@ -84,6 +84,8 @@
 // If equal to 0 then there will be no debug messages
 #define DEBUG_UART_BAUD_RATE 115200
 
+//#define DEBUG_SKIP_SENSORS
+
 // Accelerometer Settings -------------------------------------------------------------------------
 // Possible options for accelerometer g range
 // These needs to be constants
