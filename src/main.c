@@ -173,7 +173,7 @@ int main (void){
     log_printf("Error setting up sensors\r\n");
     Error_Handler();
   }
-
+  #endif
   // while(true) {
   //   struct Lis3dhDataStruct dataSample;
   //   Lis3dhRead(&dataSample);
