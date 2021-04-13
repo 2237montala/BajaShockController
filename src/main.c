@@ -168,10 +168,12 @@ int main (void){
   setupMicro();
 
   // Set up sensors
+  #ifndef DEBUG_SKIP_SENSORS
   if(!setupSensors()) {
+    printf("Error setting up sensors\r\n");
     Error_Handler();
   }
-
+  #endif
   // TODO: check if sensor values are within expected range
   // Check sensor value for errors
 
@@ -262,7 +264,7 @@ int main (void){
     while(reset == CO_RESET_NOT){
     /* loop for normal program execution ******************************************/
         #ifdef DEBUG_GPIO_ON
-          BspGpioWrite(DEBUG_GPIO_PIN,GPIO_PIN_SET);
+          //BspGpioWrite(DEBUG_GPIO_PIN,GPIO_PIN_SET);
         #endif
         // Toggle an gpio to do some timing
 
@@ -296,12 +298,14 @@ int main (void){
 
         // Collect new sensor data if we passed our interval
         if(loopMsValue - lastDataCollectTime > DATA_COLLECTION_RATE) {
+          BspGpioWrite(DEBUG_GPIO_PIN,GPIO_PIN_SET);
           lastDataCollectTime = HAL_GetTick();
           collectData();
+          BspGpioWrite(DEBUG_GPIO_PIN,GPIO_PIN_RESET);
         }
         
         #ifdef DEBUG_GPIO_ON
-          BspGpioWrite(DEBUG_GPIO_PIN,GPIO_PIN_RESET);
+          //BspGpioWrite(DEBUG_GPIO_PIN,GPIO_PIN_RESET);
         #endif
 
         /* optional sleep for short time */

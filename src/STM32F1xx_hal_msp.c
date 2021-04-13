@@ -186,12 +186,12 @@ void HAL_TIM_Base_MspInit(TIM_HandleTypeDef *htim) {
     // // Enable the clock that TIM4 is connected to. This might not be needed
     // __HAL_RCC_GPIOA_CLK_ENABLE();
 
-    // // Enable clock for the timer itself
-    // __HAL_RCC_TIM4_CLK_ENABLE();
+    // Enable clock for the timer itself
+    __HAL_RCC_TIM4_CLK_ENABLE();
 
-    // // Set up interrupts for the timer
-    // HAL_NVIC_SetPriority(TIM4_IRQn,TIM4_IRQ_PRIORITY,0);
-    // HAL_NVIC_EnableIRQ(TIM4_IRQn);
+    // Set up interrupts for the timer
+    HAL_NVIC_SetPriority(TIM4_IRQn,TIM4_IRQ_PRIORITY,0);
+    HAL_NVIC_EnableIRQ(TIM4_IRQn);
   }
   
 }
