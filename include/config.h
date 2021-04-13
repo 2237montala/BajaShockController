@@ -42,11 +42,13 @@
 #define AXIS_FOR_FREE_FALL Z_INDEX
 
 // Defines how many samples must be in free fall to consider the car in free fall
-// This value is the number of samples so the length of time this will take
-// is DATA_COLLECTION_RATE * number of samples
-#define TIME_BEFORE_VALID_FREE_FALL 0
+// To convert to a length of time DATA_COLLECTION_RATE * SAMPLES_BEFORE_VALID_FREE_FALL
+#define SAMPLES_BEFORE_VALID_FREE_FALL 30
 
-#define TIME_BEFORE_FREE_FALL_RESET 0
+#define SAMPLES_BEFORE_FREE_FALL_RESET 15
+
+// Total time before the state is not in free fall is
+// (SAMPLES_BEFORE_VALID_FREE_FALL + SAMPLES_BEFORE_FREE_FALL_RESET) * DATA_COLLECTION_RATE
 
 // CANOpen Settings -------------------------------------------------------------------------------
 // The base Node ID must be lower than 0x7F. The lower the number the higher it's priority on the 

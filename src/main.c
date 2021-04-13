@@ -170,7 +170,7 @@ int main (void){
   // Set up sensors
   #ifndef DEBUG_SKIP_SENSORS
   if(!setupSensors()) {
-    printf("Error setting up sensors\r\n");
+    log_printf("Error setting up sensors\r\n");
     Error_Handler();
   }
   #endif
@@ -191,7 +191,7 @@ int main (void){
   }
   else {
     #ifdef DEBUG_UART_ON
-      log_printf("Allocated %d bytes for CANopen objects\r\n", heapMemoryUsed);
+      log_printf("Allocated %lu bytes for CANopen objects\r\n", heapMemoryUsed);
     #endif
   }
 
@@ -352,6 +352,7 @@ void tmrTask_thread(void){
       if(syncWas) {
         filterData();
         setSensorDataToCoTdpoData();
+        //UART_putStringNL(&debugUartHandle,"send");
       }
 
       /* Write outputs */
