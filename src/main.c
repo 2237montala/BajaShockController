@@ -189,6 +189,7 @@ int main (void){
   // Connect to ground is a 0
   currNodeId = setupNodeId();
 
+
   /* Allocate memory but these are statically allocated so no malloc */
   err = CO_new(&heapMemoryUsed);
   if (err != CO_ERROR_NO) {
@@ -233,6 +234,11 @@ int main (void){
     #ifdef DEBUG_UART_ON
       printf("Starting with node id: 0x%x\r\n",currNodeId);
     #endif
+
+     // Once we have a node id we should load it into the correct OD spot for later usage
+    uint32_t coIndex = CO_OD_find(CO->SDO[0],OD_6060_sendShockDataSenderID);
+    uint8_t *shockDataSenderIdPtr = (uint8_t *) CO_OD_getDataPointer(CO->SDO[0],coIndex,0);
+    *shockDataSenderIdPtr = currNodeId;
 
     // Reset timer just inscase the registers were not reset
     stopCOThreadTimer(&coThreadTimer);
@@ -614,4 +620,8 @@ void setSensorDataToCoTdpoData() {
   // Copy accelerations over
   memcpy(OD_sendShockAccel,getMostRecentFilteredSensorData()->accels,(sizeof(REAL32) * ODL_sendShockAccel_arrayLength));
 
+  // Copy over roll pitch at yaw if needed
+
+  // Copy over linear position data
+  memcpy(&(OD_sendShockPosition), &(getMostRecentFilteredSensorData()->linearPos),sizeof(REAL32));
 }
