@@ -620,6 +620,9 @@ void setSensorDataToCoTdpoData() {
   // Copy accelerations over
   memcpy(OD_sendShockAccel,getMostRecentFilteredSensorData()->accels,(sizeof(REAL32) * ODL_sendShockAccel_arrayLength));
 
+  //TODO:
+  // Copy over accelerometer status
+
   // Copy over roll pitch at yaw if needed
 
   // Copy over linear position data
