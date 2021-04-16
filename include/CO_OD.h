@@ -68,10 +68,10 @@
   #define CO_NO_RPDO                     1   //Associated objects: 14xx, 16xx
   #define CO_NO_TPDO                     4   //Associated objects: 18xx, 1Axx
   #define CO_NO_NMT_MASTER               0
+
 #define CO_NO_TIME 0
    #define CO_NO_GFC 0
    #define CO_NO_SRDO 0
-
 /*******************************************************************************
    OBJECT DICTIONARY
 *******************************************************************************/
