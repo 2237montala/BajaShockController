@@ -55,8 +55,8 @@
    FILE INFO:
       FileName:     
       FileVersion:  1
-      CreationTime: 
-      CreationDate: 
+      CreationTime: 1:41PM
+      CreationDate: 01-23-2021
       CreatedBy:    
 ******************************************************************************/
 
@@ -210,15 +210,6 @@
 /*1015 */
         #define OD_1015_inhibitTimeEMCY                             0x1015
 
-/*1016 */
-        #define OD_1016_consumerHeartbeatTime                       0x1016
-
-        #define OD_1016_0_consumerHeartbeatTime_maxSubIndex         0
-        #define OD_1016_1_consumerHeartbeatTime_consumerHeartbeatTime 1
-        #define OD_1016_2_consumerHeartbeatTime_consumerHeartbeatTime 2
-        #define OD_1016_3_consumerHeartbeatTime_consumerHeartbeatTime 3
-        #define OD_1016_4_consumerHeartbeatTime_consumerHeartbeatTime 4
-
 /*1017 */
         #define OD_1017_producerHeartbeatTime                       0x1017
 
@@ -319,6 +310,9 @@
 /*2010 */
         #define OD_2010_shockValuePosition                          0x2010
 
+/*2100 */
+        #define OD_2100_errorStatusBits                             0x2100
+
 /*******************************************************************************
    STRUCTURES FOR VARIABLES IN DIFFERENT MEMORY LOCATIONS
 *******************************************************************************/
@@ -335,8 +329,6 @@ struct sCO_OD_ROM{
 /*100c      */ UNSIGNED16      guardTime;
 /*1014      */ UNSIGNED32      COB_ID_EMCY;
 /*1015      */ UNSIGNED16      inhibitTimeEMCY;
-/*1016      */ UNSIGNED32      consumerHeartbeatTime[4];
-/*1017      */ UNSIGNED16      producerHeartbeatTime;
 /*1018      */ OD_identity_t   identity;
 /*1019      */ UNSIGNED8       synchronousCounterOverflowValue;
 /*1029      */ UNSIGNED8       errorBehavior[6];
@@ -359,9 +351,11 @@ struct sCO_OD_RAM{
 /*100d      */ UNSIGNED8       lifeTimeFactor;
 /*1010      */ UNSIGNED32      storeParameters[1];
 /*1011      */ UNSIGNED32      restoreDefaultParameters[1];
+/*1017      */ UNSIGNED16      producerHeartbeatTime;
 /*1280      */ OD_SDOClientParameter_t SDOClientParameter[1];
 /*2000      */ REAL32          shockData[7];
 /*2010      */ UNSIGNED16      shockValuePosition;
+/*2100      */ OCTET_STRING    errorStatusBits[10];
 
                UNSIGNED32     LastWord;
 };
@@ -432,13 +426,8 @@ extern struct sCO_OD_EEPROM CO_OD_EEPROM;
 /*1015, Data Type: UNSIGNED16 */
         #define OD_inhibitTimeEMCY                                  CO_OD_ROM.inhibitTimeEMCY
 
-/*1016, Data Type: UNSIGNED32, Array[4] */
-        #define OD_consumerHeartbeatTime                            CO_OD_ROM.consumerHeartbeatTime
-        #define ODL_consumerHeartbeatTime_arrayLength               4
-        #define ODA_consumerHeartbeatTime_consumerHeartbeatTime     0
-
 /*1017, Data Type: UNSIGNED16 */
-        #define OD_producerHeartbeatTime                            CO_OD_ROM.producerHeartbeatTime
+        #define OD_producerHeartbeatTime                            CO_OD_RAM.producerHeartbeatTime
 
 /*1018, Data Type: identity_t */
         #define OD_identity                                         CO_OD_ROM.identity
@@ -487,6 +476,10 @@ extern struct sCO_OD_EEPROM CO_OD_EEPROM;
 
 /*2010, Data Type: UNSIGNED16 */
         #define OD_shockValuePosition                               CO_OD_RAM.shockValuePosition
+
+/*2100, Data Type: OCTET_STRING */
+        #define OD_errorStatusBits                                  CO_OD_RAM.errorStatusBits
+        #define ODL_errorStatusBits_stringLength                    10
 
 #endif
 // clang-format on

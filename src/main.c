@@ -612,6 +612,6 @@ void HAL_CAN_ErrorCallback(CAN_HandleTypeDef *hcan){
 void setSensorDataToCoTdpoData() {
 
   // Copy accelerations over
-  memcpy(OD_readShockAccel,getMostRecentFilteredSensorData()->accels,(sizeof(REAL32) * ODL_readShockAccel_arrayLength));
+  memcpy(OD_sendShockAccel,getMostRecentFilteredSensorData()->accels,(sizeof(REAL32) * ODL_sendShockAccel_arrayLength));
 
 }
