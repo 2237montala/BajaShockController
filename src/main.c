@@ -297,7 +297,7 @@ int main (void){
         }
 
         // Collect new sensor data if we passed our interval
-        if(loopMsValue - lastDataCollectTime > DATA_COLLECTION_RATE) {
+        if(loopMsValue - lastDataCollectTime >= DATA_COLLECTION_RATE) {
           BspGpioWrite(DEBUG_GPIO_PIN,GPIO_PIN_SET);
           lastDataCollectTime = HAL_GetTick();
           collectData();
@@ -335,7 +335,7 @@ int main (void){
 
 /* timer thread executes in constant intervals ********************************/
 void tmrTask_thread(void){
-  BspGpioWrite(DEBUG_GPIO_PIN,1);
+  //BspGpioWrite(DEBUG_GPIO_PIN,1);
   INCREMENT_1MS(CO_timer1ms);
   if(CO->CANmodule[0]->CANnormal) {
       bool_t syncWas;
@@ -363,7 +363,7 @@ void tmrTask_thread(void){
           CO_errorReport(CO->em, CO_EM_ISR_TIMER_OVERFLOW, CO_EMC_SOFTWARE_INTERNAL, 0U);
       }
   }
-  BspGpioWrite(DEBUG_GPIO_PIN,0);
+  //BspGpioWrite(DEBUG_GPIO_PIN,0);
 }
 
 void NMT_Changed_Callback(CO_NMT_internalState_t state) {
