@@ -35,6 +35,10 @@
 
    typedef domain_t     DOMAIN;
 
+        
+#define CO_NO_TIME 0
+   #define CO_NO_GFC 0
+   #define CO_NO_SRDO 0
 
 /*******************************************************************************
    FILE INFO:
@@ -69,13 +73,11 @@
   #define CO_NO_TPDO                     4   //Associated objects: 18xx, 1Axx
   #define CO_NO_NMT_MASTER               0
 
-#define CO_NO_TIME 0
-   #define CO_NO_GFC 0
-   #define CO_NO_SRDO 0
+
 /*******************************************************************************
    OBJECT DICTIONARY
 *******************************************************************************/
-   #define CO_OD_NoOfElements             41
+   #define CO_OD_NoOfElements             44
 
 
 /*******************************************************************************
@@ -363,6 +365,15 @@
 /*1f80 */
         #define OD_1f80_NMTStartup                                  0x1f80
 
+/*2000 */
+        #define OD_2000_readConnectedShockIDs                       0x2000
+
+        #define OD_2000_0_readConnectedShockIDs_maxSubIndex         0
+        #define OD_2000_1_readConnectedShockIDs_shock1ID            1
+        #define OD_2000_2_readConnectedShockIDs_shock2ID            2
+        #define OD_2000_3_readConnectedShockIDs_shock3ID            3
+        #define OD_2000_4_readConnectedShockIDs_shock4ID            4
+
 /*2100 */
         #define OD_2100_errorStatusBits                             0x2100
 
@@ -399,6 +410,12 @@
 
 /*6200 */
         #define OD_6200_readShockDamping                            0x6200
+
+/*6500 */
+        #define OD_6500_readShock1Damping                           0x6500
+
+/*6600 */
+        #define OD_6600_IDForShockDamping                           0x6600
 
 /*******************************************************************************
    STRUCTURES FOR VARIABLES IN DIFFERENT MEMORY LOCATIONS
@@ -443,6 +460,7 @@ struct sCO_OD_RAM{
 /*1010      */ UNSIGNED32      storeParameters[1];
 /*1011      */ UNSIGNED32      restoreDefaultParameters[1];
 /*1280      */ OD_SDOClientParameter_t SDOClientParameter[1];
+/*2000      */ UNSIGNED8       readConnectedShockIDs[4];
 /*2100      */ OCTET_STRING    errorStatusBits[10];
 /*2101      */ UNSIGNED8       CANNodeID;
 /*2102      */ UNSIGNED16      CANBitRate;
@@ -452,6 +470,8 @@ struct sCO_OD_RAM{
 /*6100      */ REAL32          sendAccelRPY[3];
 /*6150      */ REAL32          sendShockPosition;
 /*6200      */ REAL32          readShockDamping;
+/*6500      */ REAL32          readShock1Damping;
+/*6600      */ UNSIGNED8       IDForShockDamping;
 
                UNSIGNED32     LastWord;
 };
@@ -568,6 +588,14 @@ extern struct sCO_OD_EEPROM CO_OD_EEPROM;
 /*1f80, Data Type: UNSIGNED32 */
         #define OD_NMTStartup                                       CO_OD_ROM.NMTStartup
 
+/*2000, Data Type: UNSIGNED8, Array[4] */
+        #define OD_readConnectedShockIDs                            CO_OD_RAM.readConnectedShockIDs
+        #define ODL_readConnectedShockIDs_arrayLength               4
+        #define ODA_readConnectedShockIDs_shock1ID                  0
+        #define ODA_readConnectedShockIDs_shock2ID                  1
+        #define ODA_readConnectedShockIDs_shock3ID                  2
+        #define ODA_readConnectedShockIDs_shock4ID                  3
+
 /*2100, Data Type: OCTET_STRING */
         #define OD_errorStatusBits                                  CO_OD_RAM.errorStatusBits
         #define ODL_errorStatusBits_stringLength                    10
@@ -603,6 +631,12 @@ extern struct sCO_OD_EEPROM CO_OD_EEPROM;
 
 /*6200, Data Type: REAL32 */
         #define OD_readShockDamping                                 CO_OD_RAM.readShockDamping
+
+/*6500, Data Type: REAL32 */
+        #define OD_readShock1Damping                                CO_OD_RAM.readShock1Damping
+
+/*6600, Data Type: UNSIGNED8 */
+        #define OD_IDForShockDamping                                CO_OD_RAM.IDForShockDamping
 
 #endif
 // clang-format on
