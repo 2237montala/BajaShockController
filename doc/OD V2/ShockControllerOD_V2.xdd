@@ -1396,6 +1396,54 @@ bit 7-31: reserved, set to 0</description>
             </denotation>
             <defaultValue value="0x00000000" />
           </parameter>
+          <parameter uniqueID="UID_PARAM_2000" access="readWrite">
+            <label lang="en">Read Connected Shock IDs</label>
+            <description lang="en" />
+            <denotation>
+              <label lang="en" />
+            </denotation>
+            <defaultValue value="" />
+          </parameter>
+          <parameter uniqueID="UID_PARAM_200000" access="read">
+            <label lang="en">max sub-index</label>
+            <description lang="en" />
+            <denotation>
+              <label lang="en" />
+            </denotation>
+            <defaultValue value="4" />
+          </parameter>
+          <parameter uniqueID="UID_PARAM_200001" access="readWrite">
+            <label lang="en">Shock 1 ID</label>
+            <description lang="en" />
+            <denotation>
+              <label lang="en" />
+            </denotation>
+            <defaultValue value="0" />
+          </parameter>
+          <parameter uniqueID="UID_PARAM_200002" access="readWrite">
+            <label lang="en">Shock 2 ID</label>
+            <description lang="en" />
+            <denotation>
+              <label lang="en" />
+            </denotation>
+            <defaultValue value="0" />
+          </parameter>
+          <parameter uniqueID="UID_PARAM_200003" access="readWrite">
+            <label lang="en">Shock 3 ID</label>
+            <description lang="en" />
+            <denotation>
+              <label lang="en" />
+            </denotation>
+            <defaultValue value="0" />
+          </parameter>
+          <parameter uniqueID="UID_PARAM_200004" access="readWrite">
+            <label lang="en">Shock 4 ID</label>
+            <description lang="en" />
+            <denotation>
+              <label lang="en" />
+            </denotation>
+            <defaultValue value="0" />
+          </parameter>
           <parameter uniqueID="UID_PARAM_2100" access="read">
             <label lang="en">Error status bits</label>
             <description lang="en">Error Status Bits indicates error conditions inside stack or inside application. Specific bit is set by CO_errorReport() function, when error occurs in program. It can be reset by CO_errorReset() function, if error is solved. Emergency message is sent on each change of any Error Status Bit. If critical bits are set, node will not be able to stay in operational state. For more information see file CO_Emergency.h.
@@ -1603,6 +1651,22 @@ Bit 1 - 7: Not Defined</description>
             </denotation>
             <defaultValue value="0" />
           </parameter>
+          <parameter uniqueID="UID_PARAM_6500" access="readWrite">
+            <label lang="en">Read Shock 1 Damping</label>
+            <description lang="en" />
+            <denotation>
+              <label lang="en" />
+            </denotation>
+            <defaultValue value="" />
+          </parameter>
+          <parameter uniqueID="UID_PARAM_6600" access="readWrite">
+            <label lang="en">ID for Shock Damping</label>
+            <description lang="en" />
+            <denotation>
+              <label lang="en" />
+            </denotation>
+            <defaultValue value="0" />
+          </parameter>
         </parameterList>
       </ApplicationProcess>
     </ProfileBody>
@@ -1780,6 +1844,13 @@ Bit 1 - 7: Not Defined</description>
             <CANopenSubObject subIndex="0008" name="mapped object 8" objectType="7" dataType="0007" lowLimit="" highLimit="" accessType="ro" actualValue="" PDOmapping="no" uniqueIDRef="UID_PARAM_1a0308" />
           </CANopenObject>
           <CANopenObject index="1F80" name="NMT startup" objectType="7" dataType="0007" lowLimit="" highLimit="" accessType="rw" actualValue="" edseditor_extenstion_storagelocation="ROM" PDOmapping="no" uniqueIDRef="UID_PARAM_1f80" />
+          <CANopenObject index="2000" name="Read Connected Shock IDs" objectType="8" dataType="0005" lowLimit="" highLimit="" accessType="rw" actualValue="" denotation="" edseditor_extenstion_storagelocation="RAM" PDOmapping="optional" uniqueIDRef="UID_PARAM_2000" subNumber="5">
+            <CANopenSubObject subIndex="0000" name="max sub-index" objectType="7" dataType="0005" lowLimit="" highLimit="" accessType="ro" actualValue="" denotation="" PDOmapping="optional" uniqueIDRef="UID_PARAM_200000" />
+            <CANopenSubObject subIndex="0001" name="Shock 1 ID" objectType="7" dataType="0005" lowLimit="" highLimit="" accessType="rw" actualValue="" denotation="" PDOmapping="optional" uniqueIDRef="UID_PARAM_200001" />
+            <CANopenSubObject subIndex="0002" name="Shock 2 ID" objectType="7" dataType="0005" lowLimit="" highLimit="" accessType="rw" actualValue="" denotation="" PDOmapping="optional" uniqueIDRef="UID_PARAM_200002" />
+            <CANopenSubObject subIndex="0003" name="Shock 3 ID" objectType="7" dataType="0005" lowLimit="" highLimit="" accessType="rw" actualValue="" denotation="" PDOmapping="optional" uniqueIDRef="UID_PARAM_200003" />
+            <CANopenSubObject subIndex="0004" name="Shock 4 ID" objectType="7" dataType="0005" lowLimit="" highLimit="" accessType="rw" actualValue="" denotation="" PDOmapping="optional" uniqueIDRef="UID_PARAM_200004" />
+          </CANopenObject>
           <CANopenObject index="2100" name="Error status bits" objectType="7" dataType="000A" lowLimit="" highLimit="" accessType="ro" actualValue="" edseditor_extenstion_storagelocation="RAM" PDOmapping="optional" uniqueIDRef="UID_PARAM_2100" />
           <CANopenObject index="2101" name="CAN node ID" objectType="7" dataType="0005" lowLimit="" highLimit="" accessType="rw" actualValue="" edseditor_extenstion_storagelocation="RAM" PDOmapping="optional" uniqueIDRef="UID_PARAM_2101" />
           <CANopenObject index="2102" name="CAN bit rate" objectType="7" dataType="0006" lowLimit="" highLimit="" accessType="rw" actualValue="" edseditor_extenstion_storagelocation="RAM" PDOmapping="no" uniqueIDRef="UID_PARAM_2102" />
@@ -1799,6 +1870,8 @@ Bit 1 - 7: Not Defined</description>
           </CANopenObject>
           <CANopenObject index="6150" name="Send Shock Position" objectType="7" dataType="0008" lowLimit="" highLimit="" accessType="rw" actualValue="" edseditor_extenstion_storagelocation="RAM" PDOmapping="optional" uniqueIDRef="UID_PARAM_6150" />
           <CANopenObject index="6200" name="Read Shock Damping" objectType="7" dataType="0008" lowLimit="" highLimit="" accessType="rw" actualValue="" edseditor_extenstion_storagelocation="RAM" PDOmapping="optional" uniqueIDRef="UID_PARAM_6200" />
+          <CANopenObject index="6500" name="Read Shock 1 Damping" objectType="7" dataType="0008" lowLimit="" highLimit="" accessType="rw" actualValue="" denotation="" edseditor_extenstion_storagelocation="RAM" PDOmapping="no" uniqueIDRef="UID_PARAM_6500" />
+          <CANopenObject index="6600" name="ID for Shock Damping" objectType="7" dataType="0005" lowLimit="" highLimit="" accessType="rw" actualValue="" denotation="" edseditor_extenstion_storagelocation="RAM" PDOmapping="optional" uniqueIDRef="UID_PARAM_6600" />
         </CANopenObjectList>
         <dummyUsage>
           <dummy entry="Dummy0001=0" />
