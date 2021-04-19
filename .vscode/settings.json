@@ -2,6 +2,7 @@
     "files.associations": {
         "config.h": "c",
         "targetspecific.h": "c",
-        "bsp.h": "c"
+        "bsp.h": "c",
+        "arm_math.h": "c"
     }
 }

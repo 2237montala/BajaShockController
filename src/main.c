@@ -174,12 +174,21 @@ int main (void){
     Error_Handler();
   }
   #endif
+  // while(true) {
+  //   struct Lis3dhDataStruct dataSample;
+  //   Lis3dhRead(&dataSample);
+  //   printf("X/Y/Z\r\n");
+  //   printf("%2.3f,%2.3f,%2.3f\r\n",dataSample.xGs,dataSample.yGs,dataSample.zGs);
+  //   HAL_Delay(200);
+  // }
+
   // TODO: check if sensor values are within expected range
   // Check sensor value for errors
 
   // Calculate the node's CAN id based on on the dip switch position
   // Connect to ground is a 0
   currNodeId = setupNodeId();
+
 
   /* Allocate memory but these are statically allocated so no malloc */
   err = CO_new(&heapMemoryUsed);
@@ -225,6 +234,11 @@ int main (void){
     #ifdef DEBUG_UART_ON
       printf("Starting with node id: 0x%x\r\n",currNodeId);
     #endif
+
+     // Once we have a node id we should load it into the correct OD spot for later usage
+    uint32_t coIndex = CO_OD_find(CO->SDO[0],OD_6060_sendShockDataSenderID);
+    uint8_t *shockDataSenderIdPtr = (uint8_t *) CO_OD_getDataPointer(CO->SDO[0],coIndex,0);
+    *shockDataSenderIdPtr = currNodeId;
 
     // Reset timer just inscase the registers were not reset
     stopCOThreadTimer(&coThreadTimer);
@@ -483,13 +497,18 @@ static void setupDebugUart(UART_HandleTypeDef *huart, uint32_t buadRate) {
   */
 static void Error_Handler(void){
   /* Turn LED2 on */
-  
+  const int NUM_BLINKS = 2;
   while (1)
   {
-    BSP_LED_On(LED2);
-    HAL_Delay(500);
     BSP_LED_Off(LED2);
-    HAL_Delay(500);
+    // Number of blinks has to be multiplied by 2
+    for(int i = 0; i < 2 * NUM_BLINKS; i++) {
+      BSP_LED_Toggle(LED2);
+      HAL_Delay(250);
+    }
+    BSP_LED_Off(LED2);
+    HAL_Delay(1000);
+
   }
 }
 
@@ -575,10 +594,21 @@ void systemSoftwareReset() {
 }
 
 void HAL_CAN_ErrorCallback(CAN_HandleTypeDef *hcan){
+  uint8_t tecErrors = (hcan->Instance->ESR & CAN_ESR_TEC_Msk) >> CAN_ESR_TEC_Pos;
+  uint8_t recErrors = (hcan->Instance->ESR & CAN_ESR_REC_Msk) >> CAN_ESR_REC_Pos;
+  uint32_t errorCode = hcan->ErrorCode;
+
+  // Reset tx error if we have exited the warning state
+  if(CO_isError(CO->em,CO_EM_CAN_BUS_WARNING) && tecErrors < 127) {
+    CO_errorReset(CO->em,CO_EM_CAN_BUS_WARNING, 0);
+  }
+
+  if(CO_isError(CO->em,CO_EM_CAN_BUS_WARNING) && recErrors < 127) {
+    CO_errorReset(CO->em,CO_EM_CAN_BUS_WARNING, 0);
+  }
+
   #ifdef DEBUG_UART_ON
-    printf("CAN TEC Error: %lu\r\n",(hcan->Instance->ESR & CAN_ESR_TEC_Msk) >> CAN_ESR_TEC_Pos);
-    printf("CAN REC Error: %lu\r\n",(hcan->Instance->ESR & CAN_ESR_REC_Msk) >> CAN_ESR_REC_Pos);
-    printf("CAN error: 0x%lx\r\n",hcan->ErrorCode);
+    printf("CAN TEC/REC/Error: %d/%d/%lx\r\n", tecErrors,recErrors,errorCode);
   #endif
 }
 
@@ -588,6 +618,13 @@ void HAL_CAN_ErrorCallback(CAN_HandleTypeDef *hcan){
 void setSensorDataToCoTdpoData() {
 
   // Copy accelerations over
-  memcpy(OD_readShockAccel,getMostRecentFilteredSensorData()->accels,(sizeof(REAL32) * ODL_readShockAccel_arrayLength));
+  memcpy(OD_sendShockAccel,getMostRecentFilteredSensorData()->accels,(sizeof(REAL32) * ODL_sendShockAccel_arrayLength));
 
+  //TODO:
+  // Copy over accelerometer status
+
+  // Copy over roll pitch at yaw if needed
+
+  // Copy over linear position data
+  memcpy(&(OD_sendShockPosition), &(getMostRecentFilteredSensorData()->linearPos),sizeof(REAL32));
 }

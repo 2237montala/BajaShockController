@@ -3,6 +3,7 @@
 // Get the hal library for the specific micro
 #include "Bsp.h"
 #include <stdbool.h>
+#include "targetSpecific.h"
 /*
  * HEADER NAME : I2C.h
  * CREATOR     : Anthony Montalbano
@@ -42,6 +43,6 @@ bool I2cWriteThenRead(uint8_t deviceID, uint16_t deviceRegAddr, uint8_t *buffer,
 
 uint32_t I2cGetError();
 
-
+void I2cClockOutPreviousData(uint32_t numberOfClockCycles);
 
 uint8_t width(void);

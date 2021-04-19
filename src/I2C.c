@@ -117,3 +117,54 @@ bool I2cWriteThenRead(uint8_t deviceID, uint16_t deviceRegAddr, uint8_t *buffer,
 uint32_t I2cGetError() {
     return HAL_I2C_GetError(&I2cHandle);
 }
+
+void I2cClockOutPreviousData(uint32_t numberOfClockCycles) {
+    // If we reset the device while it was sending data it will still
+    // have data in the output register. Need to clock out that extra data
+    // or the device will not respond
+    
+    // Deactive I2C
+    HAL_I2C_DeInit(&I2cHandle);
+
+    // Change i2c pins to regular gpio pins
+    GPIO_InitTypeDef  GPIO_InitStruct;
+    /*##-2- Configure peripheral GPIO ##########################################*/  
+    /* I2C TX GPIO pin configuration  */
+    GPIO_InitStruct.Pin       = I2Cx_SCL_PIN;
+    GPIO_InitStruct.Mode      = GPIO_MODE_OUTPUT_OD;
+    GPIO_InitStruct.Pull      = GPIO_NOPULL;
+    GPIO_InitStruct.Speed     = GPIO_SPEED_FREQ_HIGH;
+    HAL_GPIO_Init(I2Cx_SCL_GPIO_PORT, &GPIO_InitStruct);
+        
+    /* I2C RX GPIO pin configuration  */
+    GPIO_InitStruct.Pin       = I2Cx_SDA_PIN;
+    HAL_GPIO_Init(I2Cx_SDA_GPIO_PORT, &GPIO_InitStruct);
+
+    // Set the pins to their default state
+    // Since these are open drain if a device on the bus is pulling them low
+    // our pins will also be low
+    HAL_GPIO_WritePin(I2Cx_SCL_GPIO_PORT,I2Cx_SCL_PIN,GPIO_PIN_SET);
+    HAL_GPIO_WritePin(I2Cx_SDA_GPIO_PORT,I2Cx_SDA_PIN,GPIO_PIN_SET);
+
+
+    // Toggle clock pin until data line goes high or we hit our cycle count
+    bool dataHigh = false;
+    uint32_t cycles = 0;
+    while(!dataHigh && cycles < numberOfClockCycles) {
+        HAL_GPIO_TogglePin(I2Cx_SCL_GPIO_PORT,I2Cx_SCL_PIN);
+        HAL_Delay(1);
+        HAL_GPIO_TogglePin(I2Cx_SCL_GPIO_PORT,I2Cx_SCL_PIN);
+
+        // Check if data has gone high (idle state)
+        if(HAL_GPIO_ReadPin(I2Cx_SDA_GPIO_PORT,I2Cx_SDA_PIN) == GPIO_PIN_SET) {
+            dataHigh = true;
+        }
+        cycles++;
+    }
+
+    HAL_GPIO_DeInit(I2Cx_SCL_GPIO_PORT, I2Cx_SCL_PIN);
+    HAL_GPIO_DeInit(I2Cx_SDA_GPIO_PORT, I2Cx_SDA_PIN);
+
+    // Re initialize the I2C module
+    HAL_I2C_Init(&I2cHandle);
+}

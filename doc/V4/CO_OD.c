@@ -9,9 +9,9 @@
 *******************************************************************************/
 
 
-#include "301/CO_driver.h"
+#include "CO_driver.h"
 #include "CO_OD.h"
-#include "301/CO_SDOserver.h"
+#include "CO_SDO.h"
 
 /*******************************************************************************
    DEFINITION AND INITIALIZATION OF OBJECT DICTIONARY VARIABLES
@@ -63,7 +63,6 @@ struct sCO_OD_RAM CO_OD_RAM = {
 /*1010*/ {0x00000003},
 /*1011*/ {0x00000001},
 /*1280*/ {{0x3L, 0x0000L, 0x0000L, 0x0L}},
-/*2000*/ {0x0L, 0x0L, 0x0L, 0x0L},
 /*2100*/ {0x0L, 0x0L, 0x0L, 0x0L, 0x0L, 0x0L, 0x0L, 0x0L, 0x0L, 0x0L},
 /*2101*/ 0x0L,
 /*2102*/ 0x1f4,
@@ -73,7 +72,6 @@ struct sCO_OD_RAM CO_OD_RAM = {
 /*6100*/ {0x0, 0x0, 0x0},
 /*6150*/ 0,
 /*6200*/ 0,
-/*6500*/ 0,
 /*6600*/ 0x0L,
 
            CO_OD_FIRST_LAST_WORD,
@@ -226,7 +224,7 @@ struct sCO_OD_EEPROM CO_OD_EEPROM = {
 /*******************************************************************************
    OBJECT DICTIONARY
 *******************************************************************************/
-const CO_OD_entry_t CO_OD[44] = {
+const CO_OD_entry_t CO_OD[42] = {
 
 {0x1000, 0x00, 0x85, 4, (void*)&CO_OD_ROM.deviceType},
 {0x1001, 0x00, 0x26, 1, (void*)&CO_OD_RAM.errorRegister},
@@ -260,7 +258,6 @@ const CO_OD_entry_t CO_OD[44] = {
 {0x1a02, 0x08, 0x00, 0, (void*)&OD_record1a02},
 {0x1a03, 0x08, 0x00, 0, (void*)&OD_record1a03},
 {0x1f80, 0x00, 0x8d, 4, (void*)&CO_OD_ROM.NMTStartup},
-{0x2000, 0x04, 0x3e, 1, (void*)&CO_OD_RAM.readConnectedShockIDs[0]},
 {0x2100, 0x00, 0x26, 10, (void*)&CO_OD_RAM.errorStatusBits},
 {0x2101, 0x00, 0x3e, 1, (void*)&CO_OD_RAM.CANNodeID},
 {0x2102, 0x00, 0x8e, 2, (void*)&CO_OD_RAM.CANBitRate},
@@ -270,7 +267,6 @@ const CO_OD_entry_t CO_OD[44] = {
 {0x6100, 0x03, 0xbe, 4, (void*)&CO_OD_RAM.sendAccelRPY[0]},
 {0x6150, 0x00, 0xbe, 4, (void*)&CO_OD_RAM.sendShockPosition},
 {0x6200, 0x00, 0xbe, 4, (void*)&CO_OD_RAM.readShockDamping},
-{0x6500, 0x00, 0x8e, 4, (void*)&CO_OD_RAM.readShock1Damping},
 {0x6600, 0x00, 0x3e, 1, (void*)&CO_OD_RAM.IDForShockDamping},
 };
 // clang-format on

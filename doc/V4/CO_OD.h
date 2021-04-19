@@ -54,10 +54,10 @@
 /*******************************************************************************
    FILE INFO:
       FileName:     
-      FileVersion:  1
-      CreationTime: 
-      CreationDate: 
-      CreatedBy:    
+      FileVersion:  0
+      CreationTime: 12:01AM
+      CreationDate: 01-25-2021
+      CreatedBy:    Anthony Montalbano
 ******************************************************************************/
 
 
@@ -65,7 +65,7 @@
    DEVICE INFO:
       VendorName:     
       VendorNumber    0
-      ProductName:    New Product
+      ProductName:    Shock Controller
       ProductNumber:  0
 ******************************************************************************/
 
@@ -73,22 +73,22 @@
 /*******************************************************************************
    FEATURES
 *******************************************************************************/
-  #define CO_NO_SYNC                     0   //Associated objects: 1005-1007
+  #define CO_NO_SYNC                     1   //Associated objects: 1005-1007
   #define CO_NO_EMERGENCY                1   //Associated objects: 1014, 1015
-  #define CO_NO_TS                       0   //Associated objects: 1012, 1013
+  #define CO_NO_TS                       1   //Associated objects: 1012, 1013
   #define CO_NO_SDO_SERVER               1   //Associated objects: 1200-127F
   #define CO_NO_SDO_CLIENT               1   //Associated objects: 1280-12FF
   #define CO_NO_LSS_SERVER               0   //LSS Slave
   #define CO_NO_LSS_CLIENT               0   //LSS Master
   #define CO_NO_RPDO                     1   //Associated objects: 14xx, 16xx
-  #define CO_NO_TPDO                     1   //Associated objects: 18xx, 1Axx
+  #define CO_NO_TPDO                     4   //Associated objects: 18xx, 1Axx
   #define CO_NO_NMT_MASTER               0
 
 
 /*******************************************************************************
    OBJECT DICTIONARY
 *******************************************************************************/
-   #define CO_OD_NoOfElements             26
+   #define CO_OD_NoOfElements             42
 
 
 /*******************************************************************************
@@ -177,6 +177,15 @@
         #define OD_1003_7_preDefinedErrorField_standardErrorField   7
         #define OD_1003_8_preDefinedErrorField_standardErrorField   8
 
+/*1005 */
+        #define OD_1005_COB_ID_SYNCMessage                          0x1005
+
+/*1006 */
+        #define OD_1006_communicationCyclePeriod                    0x1006
+
+/*1007 */
+        #define OD_1007_synchronousWindowLength                     0x1007
+
 /*1008 */
         #define OD_1008_manufacturerDeviceName                      0x1008
 
@@ -185,12 +194,6 @@
 
 /*100a */
         #define OD_100a_manufacturerSoftwareVersion                 0x100a
-
-/*100c */
-        #define OD_100c_guardTime                                   0x100c
-
-/*100d */
-        #define OD_100d_lifeTimeFactor                              0x100d
 
 /*1010 */
         #define OD_1010_storeParameters                             0x1010
@@ -204,20 +207,14 @@
         #define OD_1011_0_restoreDefaultParameters_maxSubIndex      0
         #define OD_1011_1_restoreDefaultParameters_restoreAllDefaultParameters 1
 
+/*1012 */
+        #define OD_1012_COB_ID_TIME                                 0x1012
+
 /*1014 */
         #define OD_1014_COB_ID_EMCY                                 0x1014
 
 /*1015 */
         #define OD_1015_inhibitTimeEMCY                             0x1015
-
-/*1016 */
-        #define OD_1016_consumerHeartbeatTime                       0x1016
-
-        #define OD_1016_0_consumerHeartbeatTime_maxSubIndex         0
-        #define OD_1016_1_consumerHeartbeatTime_consumerHeartbeatTime 1
-        #define OD_1016_2_consumerHeartbeatTime_consumerHeartbeatTime 2
-        #define OD_1016_3_consumerHeartbeatTime_consumerHeartbeatTime 3
-        #define OD_1016_4_consumerHeartbeatTime_consumerHeartbeatTime 4
 
 /*1017 */
         #define OD_1017_producerHeartbeatTime                       0x1017
@@ -291,6 +288,39 @@
         #define OD_1800_5_TPDOCommunicationParameter_eventTimer     5
         #define OD_1800_6_TPDOCommunicationParameter_SYNCStartValue 6
 
+/*1801 */
+        #define OD_1801_TPDOCommunicationParameter                  0x1801
+
+        #define OD_1801_0_TPDOCommunicationParameter_maxSubIndex    0
+        #define OD_1801_1_TPDOCommunicationParameter_COB_IDUsedByTPDO 1
+        #define OD_1801_2_TPDOCommunicationParameter_transmissionType 2
+        #define OD_1801_3_TPDOCommunicationParameter_inhibitTime    3
+        #define OD_1801_4_TPDOCommunicationParameter_compatibilityEntry 4
+        #define OD_1801_5_TPDOCommunicationParameter_eventTimer     5
+        #define OD_1801_6_TPDOCommunicationParameter_SYNCStartValue 6
+
+/*1802 */
+        #define OD_1802_TPDOCommunicationParameter                  0x1802
+
+        #define OD_1802_0_TPDOCommunicationParameter_maxSubIndex    0
+        #define OD_1802_1_TPDOCommunicationParameter_COB_IDUsedByTPDO 1
+        #define OD_1802_2_TPDOCommunicationParameter_transmissionType 2
+        #define OD_1802_3_TPDOCommunicationParameter_inhibitTime    3
+        #define OD_1802_4_TPDOCommunicationParameter_compatibilityEntry 4
+        #define OD_1802_5_TPDOCommunicationParameter_eventTimer     5
+        #define OD_1802_6_TPDOCommunicationParameter_SYNCStartValue 6
+
+/*1803 */
+        #define OD_1803_TPDOCommunicationParameter                  0x1803
+
+        #define OD_1803_0_TPDOCommunicationParameter_maxSubIndex    0
+        #define OD_1803_1_TPDOCommunicationParameter_COB_IDUsedByTPDO 1
+        #define OD_1803_2_TPDOCommunicationParameter_transmissionType 2
+        #define OD_1803_3_TPDOCommunicationParameter_inhibitTime    3
+        #define OD_1803_4_TPDOCommunicationParameter_compatibilityEntry 4
+        #define OD_1803_5_TPDOCommunicationParameter_eventTimer     5
+        #define OD_1803_6_TPDOCommunicationParameter_SYNCStartValue 6
+
 /*1a00 */
         #define OD_1a00_TPDOMappingParameter                        0x1a00
 
@@ -304,20 +334,87 @@
         #define OD_1a00_7_TPDOMappingParameter_mappedObject7        7
         #define OD_1a00_8_TPDOMappingParameter_mappedObject8        8
 
-/*2000 */
-        #define OD_2000_shockData                                   0x2000
+/*1a01 */
+        #define OD_1a01_TPDOMappingParameter                        0x1a01
 
-        #define OD_2000_0_shockData_maxSubIndex                     0
-        #define OD_2000_1_shockData_shockPosition                   1
-        #define OD_2000_2_shockData_accelX                          2
-        #define OD_2000_3_shockData_accelY                          3
-        #define OD_2000_4_shockData_accelZ                          4
-        #define OD_2000_5_shockData_roll                            5
-        #define OD_2000_6_shockData_pitch                           6
-        #define OD_2000_7_shockData_yaw                             7
+        #define OD_1a01_0_TPDOMappingParameter_maxSubIndex          0
+        #define OD_1a01_1_TPDOMappingParameter_mappedObject1        1
+        #define OD_1a01_2_TPDOMappingParameter_mappedObject2        2
+        #define OD_1a01_3_TPDOMappingParameter_mappedObject3        3
+        #define OD_1a01_4_TPDOMappingParameter_mappedObject4        4
+        #define OD_1a01_5_TPDOMappingParameter_mappedObject5        5
+        #define OD_1a01_6_TPDOMappingParameter_mappedObject6        6
+        #define OD_1a01_7_TPDOMappingParameter_mappedObject7        7
+        #define OD_1a01_8_TPDOMappingParameter_mappedObject8        8
 
-/*2010 */
-        #define OD_2010_shockValuePosition                          0x2010
+/*1a02 */
+        #define OD_1a02_TPDOMappingParameter                        0x1a02
+
+        #define OD_1a02_0_TPDOMappingParameter_maxSubIndex          0
+        #define OD_1a02_1_TPDOMappingParameter_mappedObject1        1
+        #define OD_1a02_2_TPDOMappingParameter_mappedObject2        2
+        #define OD_1a02_3_TPDOMappingParameter_mappedObject3        3
+        #define OD_1a02_4_TPDOMappingParameter_mappedObject4        4
+        #define OD_1a02_5_TPDOMappingParameter_mappedObject5        5
+        #define OD_1a02_6_TPDOMappingParameter_mappedObject6        6
+        #define OD_1a02_7_TPDOMappingParameter_mappedObject7        7
+        #define OD_1a02_8_TPDOMappingParameter_mappedObject8        8
+
+/*1a03 */
+        #define OD_1a03_TPDOMappingParameter                        0x1a03
+
+        #define OD_1a03_0_TPDOMappingParameter_maxSubIndex          0
+        #define OD_1a03_1_TPDOMappingParameter_mappedObject1        1
+        #define OD_1a03_2_TPDOMappingParameter_mappedObject2        2
+        #define OD_1a03_3_TPDOMappingParameter_mappedObject3        3
+        #define OD_1a03_4_TPDOMappingParameter_mappedObject4        4
+        #define OD_1a03_5_TPDOMappingParameter_mappedObject5        5
+        #define OD_1a03_6_TPDOMappingParameter_mappedObject6        6
+        #define OD_1a03_7_TPDOMappingParameter_mappedObject7        7
+        #define OD_1a03_8_TPDOMappingParameter_mappedObject8        8
+
+/*1f80 */
+        #define OD_1f80_NMTStartup                                  0x1f80
+
+/*2100 */
+        #define OD_2100_errorStatusBits                             0x2100
+
+/*2101 */
+        #define OD_2101_CANNodeID                                   0x2101
+
+/*2102 */
+        #define OD_2102_CANBitRate                                  0x2102
+
+/*6000 */
+        #define OD_6000_sendShockAccel                              0x6000
+
+        #define OD_6000_0_sendShockAccel_maxSubIndex                0
+        #define OD_6000_1_sendShockAccel_X_Accel                    1
+        #define OD_6000_2_sendShockAccel_Y_Accel                    2
+        #define OD_6000_3_sendShockAccel_Z_Accel                    3
+
+/*6050 */
+        #define OD_6050_sendShockAccelStatus                        0x6050
+
+/*6060 */
+        #define OD_6060_sendShockDataSenderID                       0x6060
+
+/*6100 */
+        #define OD_6100_sendAccelRPY                                0x6100
+
+        #define OD_6100_0_sendAccelRPY_maxSubIndex                  0
+        #define OD_6100_1_sendAccelRPY_roll                         1
+        #define OD_6100_2_sendAccelRPY_pitch                        2
+        #define OD_6100_3_sendAccelRPY_yaw                          3
+
+/*6150 */
+        #define OD_6150_sendShockPosition                           0x6150
+
+/*6200 */
+        #define OD_6200_readShockDamping                            0x6200
+
+/*6600 */
+        #define OD_6600_IDForShockDamping                           0x6600
 
 /*******************************************************************************
    STRUCTURES FOR VARIABLES IN DIFFERENT MEMORY LOCATIONS
@@ -329,13 +426,15 @@ struct sCO_OD_ROM{
                UNSIGNED32     FirstWord;
 
 /*1000      */ UNSIGNED32      deviceType;
+/*1005      */ UNSIGNED32      COB_ID_SYNCMessage;
+/*1006      */ UNSIGNED32      communicationCyclePeriod;
+/*1007      */ UNSIGNED32      synchronousWindowLength;
 /*1008      */ VISIBLE_STRING  manufacturerDeviceName[11];
-/*1009      */ VISIBLE_STRING  manufacturerHardwareVersion[4];
-/*100a      */ VISIBLE_STRING  manufacturerSoftwareVersion[4];
-/*100c      */ UNSIGNED16      guardTime;
+/*1009      */ VISIBLE_STRING  manufacturerHardwareVersion[3];
+/*100a      */ VISIBLE_STRING  manufacturerSoftwareVersion[3];
+/*1012      */ UNSIGNED32      COB_ID_TIME;
 /*1014      */ UNSIGNED32      COB_ID_EMCY;
 /*1015      */ UNSIGNED16      inhibitTimeEMCY;
-/*1016      */ UNSIGNED32      consumerHeartbeatTime[4];
 /*1017      */ UNSIGNED16      producerHeartbeatTime;
 /*1018      */ OD_identity_t   identity;
 /*1019      */ UNSIGNED8       synchronousCounterOverflowValue;
@@ -343,8 +442,9 @@ struct sCO_OD_ROM{
 /*1200      */ OD_SDOServerParameter_t SDOServerParameter[1];
 /*1400      */ OD_RPDOCommunicationParameter_t RPDOCommunicationParameter[1];
 /*1600      */ OD_RPDOMappingParameter_t RPDOMappingParameter[1];
-/*1800      */ OD_TPDOCommunicationParameter_t TPDOCommunicationParameter[1];
-/*1a00      */ OD_TPDOMappingParameter_t TPDOMappingParameter[1];
+/*1800      */ OD_TPDOCommunicationParameter_t TPDOCommunicationParameter[4];
+/*1a00      */ OD_TPDOMappingParameter_t TPDOMappingParameter[4];
+/*1f80      */ UNSIGNED32      NMTStartup;
 
                UNSIGNED32     LastWord;
 };
@@ -356,12 +456,19 @@ struct sCO_OD_RAM{
 /*1001      */ UNSIGNED8       errorRegister;
 /*1002      */ UNSIGNED32      manufacturerStatusRegister;
 /*1003      */ UNSIGNED32      preDefinedErrorField[8];
-/*100d      */ UNSIGNED8       lifeTimeFactor;
 /*1010      */ UNSIGNED32      storeParameters[1];
 /*1011      */ UNSIGNED32      restoreDefaultParameters[1];
 /*1280      */ OD_SDOClientParameter_t SDOClientParameter[1];
-/*2000      */ REAL32          shockData[7];
-/*2010      */ UNSIGNED16      shockValuePosition;
+/*2100      */ OCTET_STRING    errorStatusBits[10];
+/*2101      */ UNSIGNED8       CANNodeID;
+/*2102      */ UNSIGNED16      CANBitRate;
+/*6000      */ REAL32          sendShockAccel[3];
+/*6050      */ UNSIGNED8       sendShockAccelStatus;
+/*6060      */ UNSIGNED8       sendShockDataSenderID;
+/*6100      */ REAL32          sendAccelRPY[3];
+/*6150      */ REAL32          sendShockPosition;
+/*6200      */ REAL32          readShockDamping;
+/*6600      */ UNSIGNED8       IDForShockDamping;
 
                UNSIGNED32     LastWord;
 };
@@ -398,23 +505,26 @@ extern struct sCO_OD_EEPROM CO_OD_EEPROM;
         #define ODL_preDefinedErrorField_arrayLength                8
         #define ODA_preDefinedErrorField_standardErrorField         0
 
+/*1005, Data Type: UNSIGNED32 */
+        #define OD_COB_ID_SYNCMessage                               CO_OD_ROM.COB_ID_SYNCMessage
+
+/*1006, Data Type: UNSIGNED32 */
+        #define OD_communicationCyclePeriod                         CO_OD_ROM.communicationCyclePeriod
+
+/*1007, Data Type: UNSIGNED32 */
+        #define OD_synchronousWindowLength                          CO_OD_ROM.synchronousWindowLength
+
 /*1008, Data Type: VISIBLE_STRING */
         #define OD_manufacturerDeviceName                           CO_OD_ROM.manufacturerDeviceName
         #define ODL_manufacturerDeviceName_stringLength             11
 
 /*1009, Data Type: VISIBLE_STRING */
         #define OD_manufacturerHardwareVersion                      CO_OD_ROM.manufacturerHardwareVersion
-        #define ODL_manufacturerHardwareVersion_stringLength        4
+        #define ODL_manufacturerHardwareVersion_stringLength        3
 
 /*100a, Data Type: VISIBLE_STRING */
         #define OD_manufacturerSoftwareVersion                      CO_OD_ROM.manufacturerSoftwareVersion
-        #define ODL_manufacturerSoftwareVersion_stringLength        4
-
-/*100c, Data Type: UNSIGNED16 */
-        #define OD_guardTime                                        CO_OD_ROM.guardTime
-
-/*100d, Data Type: UNSIGNED8 */
-        #define OD_lifeTimeFactor                                   CO_OD_RAM.lifeTimeFactor
+        #define ODL_manufacturerSoftwareVersion_stringLength        3
 
 /*1010, Data Type: UNSIGNED32, Array[1] */
         #define OD_storeParameters                                  CO_OD_RAM.storeParameters
@@ -426,16 +536,14 @@ extern struct sCO_OD_EEPROM CO_OD_EEPROM;
         #define ODL_restoreDefaultParameters_arrayLength            1
         #define ODA_restoreDefaultParameters_restoreAllDefaultParameters 0
 
+/*1012, Data Type: UNSIGNED32 */
+        #define OD_COB_ID_TIME                                      CO_OD_ROM.COB_ID_TIME
+
 /*1014, Data Type: UNSIGNED32 */
         #define OD_COB_ID_EMCY                                      CO_OD_ROM.COB_ID_EMCY
 
 /*1015, Data Type: UNSIGNED16 */
         #define OD_inhibitTimeEMCY                                  CO_OD_ROM.inhibitTimeEMCY
-
-/*1016, Data Type: UNSIGNED32, Array[4] */
-        #define OD_consumerHeartbeatTime                            CO_OD_ROM.consumerHeartbeatTime
-        #define ODL_consumerHeartbeatTime_arrayLength               4
-        #define ODA_consumerHeartbeatTime_consumerHeartbeatTime     0
 
 /*1017, Data Type: UNSIGNED16 */
         #define OD_producerHeartbeatTime                            CO_OD_ROM.producerHeartbeatTime
@@ -474,19 +582,47 @@ extern struct sCO_OD_EEPROM CO_OD_EEPROM;
 /*1a00, Data Type: TPDOMappingParameter_t */
         #define OD_TPDOMappingParameter                             CO_OD_ROM.TPDOMappingParameter
 
-/*2000, Data Type: REAL32, Array[7] */
-        #define OD_shockData                                        CO_OD_RAM.shockData
-        #define ODL_shockData_arrayLength                           7
-        #define ODA_shockData_shockPosition                         0
-        #define ODA_shockData_accelX                                1
-        #define ODA_shockData_accelY                                2
-        #define ODA_shockData_accelZ                                3
-        #define ODA_shockData_roll                                  4
-        #define ODA_shockData_pitch                                 5
-        #define ODA_shockData_yaw                                   6
+/*1f80, Data Type: UNSIGNED32 */
+        #define OD_NMTStartup                                       CO_OD_ROM.NMTStartup
 
-/*2010, Data Type: UNSIGNED16 */
-        #define OD_shockValuePosition                               CO_OD_RAM.shockValuePosition
+/*2100, Data Type: OCTET_STRING */
+        #define OD_errorStatusBits                                  CO_OD_RAM.errorStatusBits
+        #define ODL_errorStatusBits_stringLength                    10
+
+/*2101, Data Type: UNSIGNED8 */
+        #define OD_CANNodeID                                        CO_OD_RAM.CANNodeID
+
+/*2102, Data Type: UNSIGNED16 */
+        #define OD_CANBitRate                                       CO_OD_RAM.CANBitRate
+
+/*6000, Data Type: REAL32, Array[3] */
+        #define OD_sendShockAccel                                   CO_OD_RAM.sendShockAccel
+        #define ODL_sendShockAccel_arrayLength                      3
+        #define ODA_sendShockAccel_X_Accel                          0
+        #define ODA_sendShockAccel_Y_Accel                          1
+        #define ODA_sendShockAccel_Z_Accel                          2
+
+/*6050, Data Type: UNSIGNED8 */
+        #define OD_sendShockAccelStatus                             CO_OD_RAM.sendShockAccelStatus
+
+/*6060, Data Type: UNSIGNED8 */
+        #define OD_sendShockDataSenderID                            CO_OD_RAM.sendShockDataSenderID
+
+/*6100, Data Type: REAL32, Array[3] */
+        #define OD_sendAccelRPY                                     CO_OD_RAM.sendAccelRPY
+        #define ODL_sendAccelRPY_arrayLength                        3
+        #define ODA_sendAccelRPY_roll                               0
+        #define ODA_sendAccelRPY_pitch                              1
+        #define ODA_sendAccelRPY_yaw                                2
+
+/*6150, Data Type: REAL32 */
+        #define OD_sendShockPosition                                CO_OD_RAM.sendShockPosition
+
+/*6200, Data Type: REAL32 */
+        #define OD_readShockDamping                                 CO_OD_RAM.readShockDamping
+
+/*6600, Data Type: UNSIGNED8 */
+        #define OD_IDForShockDamping                                CO_OD_RAM.IDForShockDamping
 
 #endif
 // clang-format on
